@@ -1,6 +1,6 @@
 # poagov
 
-A tool to monitor the POA Network's blockchain for goverance events
+A tool to monitor the POA Network's blockchain for
 [governance events](https://github.com/poanetwork/wiki/wiki/Governance-Overview).
 
 # Building
