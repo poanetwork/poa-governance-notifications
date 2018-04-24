@@ -70,6 +70,13 @@ Add a comma-separated list of email address to the "VALIDATORS" config
 option in your .env file. These addresses will be sent emails when `poagov`
 encounters governance events on the POA blockchain.
 
+*Note* `poagov` forces SMTP email notifcations to be sent over an encrypted
+channel, if your SMTP Host does not support TLS or STARTTLS, `poagov` will
+panic. You may notice that we default `SMTP_PORT` to port 587 for STARTTLS,
+but you may use port 465 for TLS, or any other port that your outgoing
+email server is lisening for secure connections. If you require unencrypted
+SMTP, submit an issue and I can add it.
+
 # An Explained Example
 
     $ ./target/release/poagov --sokol --earliest -kt --email

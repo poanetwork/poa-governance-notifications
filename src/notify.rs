@@ -1,15 +1,17 @@
 use chrono::{DateTime, Utc};
 use ethereum_types::Address;
 use lettre::{EmailTransport, SmtpTransport};
-use lettre::smtp::{self, ConnectionReuseParameters};
+use lettre::smtp::{ClientSecurity, ConnectionReuseParameters, SmtpTransportBuilder};
 use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre_email::{self, Email, EmailBuilder};
+use lettre::smtp::client::net::{ClientTlsParameters, DEFAULT_TLS_PROTOCOLS};
+use lettre::smtp::error::Error as BuildSmtpError;
+use lettre_email::{Email, EmailBuilder};
+use lettre_email::error::Error as BuildEmailError;
+use native_tls::TlsConnector;
 
 use config::{Config, ContractType, Network, Validator};
 use logging::{log_email_failed, log_email_sent, log_notification};
 use rpc::{BallotCreatedLog, BallotType, KeyType, VotingData};
-
-type BuildEmailResult = Result<Email, lettre_email::error::Error>;
 
 #[derive(Debug)]
 pub enum Notification {
@@ -119,23 +121,35 @@ pub struct Notifier<'a> {
 }
 
 impl<'a> Notifier<'a> {
-    pub fn new(config: &'a Config) -> Result<Self, smtp::error::Error> {
-        let mailer = if config.send_email_notifications {
-            let creds = Credentials::new(
+    pub fn new(config: &'a Config) -> Result<Self, BuildSmtpError> {        
+        let mut notifier = Notifier { config, mailer: None };
+
+        if config.send_email_notifications {
+            let smtp_addr = (config.smtp_host_domain.as_str(), config.smtp_port);
+            
+            let smtp_tls = {
+                let mut tls_builder = TlsConnector::builder().unwrap();
+                tls_builder.supported_protocols(DEFAULT_TLS_PROTOCOLS).unwrap();
+                let tls = tls_builder.build().unwrap();
+                let tls_params = ClientTlsParameters::new(config.smtp_host_domain.clone(), tls);
+                ClientSecurity::Required(tls_params)
+            };
+
+            let smtp_creds = Credentials::new(
                 config.smtp_username.clone(),
                 config.smtp_password.clone()
             );
-            let mailer = SmtpTransport::simple_builder(&config.smtp_host_domain)?
+
+            let mailer = SmtpTransportBuilder::new(smtp_addr, smtp_tls)?
                 .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
                 .authentication_mechanism(Mechanism::Plain)
-                .credentials(creds)
+                .credentials(smtp_creds)
                 .build();
-            Some(mailer)
-        } else {
-            None
-        };
 
-        Ok(Notifier { config, mailer })
+            notifier.mailer = Some(mailer);
+        }
+
+        Ok(notifier)
     }
 
     pub fn build_notification(&self, log: &BallotCreatedLog, voting_data: &VotingData) -> Notification {
@@ -161,7 +175,7 @@ impl<'a> Notifier<'a> {
         }
     }
 
-    fn build_email(&self, validator: &Validator, notif: &Notification) -> BuildEmailResult {
+    fn build_email(&self, validator: &Validator, notif: &Notification) -> Result<Email, BuildEmailError> {
         let body = match *notif {
             Notification::Keys(ref inner) => format!("{:#?}\n", inner),
             Notification::Threshold(ref inner) => format!("{:#?}\n", inner),

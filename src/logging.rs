@@ -15,7 +15,12 @@ lazy_static! {
 }
 
 pub fn log_notification(notif: &Notification) {
-    info!(LOGGER, "notification"; "data" => format!("{:#?}", notif));
+    let notif_data = match *notif {
+        Notification::Keys(ref inner) => format!("{:#?}", inner),
+        Notification::Threshold(ref inner) => format!("{:#?}", inner),
+        Notification::Proxy(ref inner) => format!("{:#?}", inner)
+    };
+    info!(LOGGER, "notification"; "data" => notif_data);
 }
 
 pub fn log_email_sent(email: &str) {

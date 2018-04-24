@@ -159,6 +159,7 @@ pub struct Config {
     pub validators: Vec<Validator>,
     pub avg_block_time: Duration,
     pub smtp_host_domain: String,
+    pub smtp_port: u16,
     pub smtp_username: String,
     pub smtp_password: String,
     pub outgoing_email: String
@@ -263,17 +264,16 @@ impl Config {
         };
 
         let smtp_host_domain = env::var("SMTP_HOST_DOMAIN").unwrap();
+        let smtp_port = env::var("SMTP_PORT").unwrap().parse().unwrap();
         let smtp_username = env::var("SMTP_USERNAME").unwrap();
         let smtp_password = env::var("SMTP_PASSWORD").unwrap();
         let outgoing_email = env::var("OUTGOING_EMAIL_ADDRESS").unwrap();
 
         Config {
             network, endpoint, contracts, start_block,
-            send_email_notifications,
-            send_push_notifications,
-            validators, avg_block_time,
-            smtp_host_domain, smtp_username,
-            smtp_password, outgoing_email
+            send_email_notifications, send_push_notifications,
+            validators, avg_block_time, smtp_host_domain,
+            smtp_port, smtp_username, smtp_password, outgoing_email
         }
     }
 }

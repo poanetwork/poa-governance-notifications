@@ -8,6 +8,7 @@ extern crate jsonrpc_core;
 #[macro_use] extern crate lazy_static;
 extern crate lettre;
 extern crate lettre_email;
+extern crate native_tls;
 extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
