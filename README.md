@@ -62,6 +62,7 @@ In order to enable email notifications, you must change the name of the
 SMTP config options in your `.env` file:
 
     SMTP_HOST_DOMAIN=
+    SMTP_PORT=
     SMTP_USERNAME=
     SMTP_PASSWORD=
     OUTGOING_EMAIL_ADDRESS=
