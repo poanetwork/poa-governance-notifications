@@ -98,17 +98,16 @@ or failed to be sent will be logged. The following is an example log for a
 a notification for a ballot to change the min threshold that was generated
 using the command `$ poagov --earliest -t`:
 
-    Apr 21 08:31:54.219 INFO notification, data: Threshold(
-        ThresholdNotification {
-            network: Sokol,
-            endpoint: "https://sokol.poa.network",
-            block_number: 1078816,
-            contract_type: Threshold,
-            ballot_type: ChangeMinThreshold,
-            ballot_id: 2,
-            start_time: 2018-02-23T05:28:22Z,
-            end_time: 2018-02-25T05:33:00Z,
-            memo: "*TEST* ballot to increase the consensus threshold to 51% (rounded to the higher integer) of the total number of validators. The idea is to legitimize passing the ballot by the majority participation.",
-            proposed_value: 4
-        }
-    )
+    Apr 21 08:31:54.219 INFO notification, data: ThresholdNotification {
+        network: Sokol,
+        endpoint: "https://sokol.poa.network",
+        block_number: 1078816,
+        contract_type: Threshold,
+        ballot_type: ChangeMinThreshold,
+        ballot_id: 2,
+        start_time: 2018-02-23T05:28:22Z,
+        end_time: 2018-02-25T05:33:00Z,
+        memo: "*TEST* ballot to increase the consensus threshold to 51% (rounded to the higher integer) of the total number of validators. The idea is to legitimize passing the ballot by the majority participation.",
+        proposed_value: 4
+    }
+
