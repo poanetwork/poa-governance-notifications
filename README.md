@@ -11,6 +11,16 @@ To build the `poagov` CLI tool, run the following:
     $ cd poagov
     $ cargo build --release
 
+*Note* `poagov` uses experimental Rust features that are currently only
+available in Rust version 1.26.0-nightly. You can check which version of
+Rust that you are using, by running:
+
+    $ rustc --version
+
+If you are not using Rust 1.26.0-nightly, you can switch to it using:
+
+    $ rustup default nightly
+
 # Usage
 
 Once you have built `poagov`, you can print out the CLI usage by running:
