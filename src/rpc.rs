@@ -13,7 +13,7 @@ use reqwest;
 use serde_json as json;
 use web3::types::{BlockNumber, Bytes, CallRequest, Filter, FilterBuilder, Log};
 
-use config::{ContractType, PoaContract};
+use config::{Config, ContractType, PoaContract, StartBlock};
 use utils::{hex_string_to_u64, u256_to_datetime};
 
 const JSONRPC_VERSION: rpc::Version = rpc::Version::V2;
@@ -321,41 +321,60 @@ impl From<Vec<Token>> for ProxyVotingData {
     }
 }
 
-
-pub struct BlockWindows<'a> {
+pub struct BlockchainIter<'a> {
     client: &'a RpcClient,
-    block_time: Duration,
+    start_block: u64,
+    stop_block: u64,
     on_first_iteration: bool,
-    start: u64,
-    stop: u64
+    avg_block_time: Duration
 }
 
-impl<'a> BlockWindows<'a> {
-    pub fn new(client: &'a RpcClient, block_time: Duration) -> Self {
-        let start = 0;
-        let stop = 0;
-        let on_first_iteration = true;
-        BlockWindows { client, block_time, start, stop, on_first_iteration }
+impl<'a> BlockchainIter<'a> {
+    pub fn new(client: &'a RpcClient, config: &Config) -> Self {
+        let latest = client.latest_block_number().unwrap();
+
+        let start_block = match config.start_block {
+            StartBlock::Earliest => 0,
+            StartBlock::Latest => latest,
+            StartBlock::Number(block_number) => block_number,
+            StartBlock::Tail(tail) => latest - tail
+        };
+
+        if start_block > latest {
+            panic!(
+                "Provided start-block ({}) exceeds latest mined block number ({})",
+                start_block,
+                latest
+            );
+        }
+
+        BlockchainIter {
+            client,
+            start_block,
+            stop_block: latest,
+            on_first_iteration: true,
+            avg_block_time: config.avg_block_time
+        }
     }
 }
 
-impl<'a> Iterator for BlockWindows<'a> {
+impl<'a> Iterator for BlockchainIter<'a> {
     type Item = (BlockNumber, BlockNumber);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.on_first_iteration {
-            self.stop = self.client.latest_block_number().unwrap();
             self.on_first_iteration = false;
         } else {
-            self.start = self.stop + 1;
-            while self.start >= self.stop {
-                thread::sleep(self.block_time);
-                self.stop = self.client.latest_block_number().unwrap();
+            self.start_block = self.stop_block + 1;
+            while self.start_block >= self.stop_block {
+                thread::sleep(self.avg_block_time);
+                self.stop_block = self.client.latest_block_number().unwrap();
             }
         }
+
         Some((
-            BlockNumber::Number(self.start),
-            BlockNumber::Number(self.stop)
+            BlockNumber::Number(self.start_block),
+            BlockNumber::Number(self.stop_block)
         ))
     }
 }

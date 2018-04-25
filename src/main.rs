@@ -25,18 +25,17 @@ mod utils;
 
 use config::Config;
 use notify::Notifier;
-use rpc::{BlockWindows, RpcClient};
+use rpc::{BlockchainIter, RpcClient};
 
 fn main() {
     let config = Config::load();
     let client = RpcClient::new(&config.endpoint);
-    let block_windows = BlockWindows::new(&client, config.avg_block_time);
     let mut notifier = Notifier::new(&config).unwrap();
-
-    for (start, stop) in block_windows {
+    
+    for (start_block, stop_block) in BlockchainIter::new(&client, &config) {
         for contract in &config.contracts {
             let ballot_created_logs = client
-                .get_ballot_created_logs(contract, start, stop)
+                .get_ballot_created_logs(contract, start_block, stop_block)
                 .unwrap();
 
             for log in &ballot_created_logs {

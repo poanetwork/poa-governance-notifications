@@ -7,7 +7,6 @@ use std::time::Duration;
 use dotenv::dotenv;
 use ethabi::{Contract, Event, Function};
 use ethereum_types::Address;
-use web3::types::BlockNumber;
 
 use cli::Cli;
 use utils::hex_string_to_u64;
@@ -73,40 +72,29 @@ impl ContractType {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct StartBlock {
-    pub block: BlockNumber,
-    pub tail: u64
-}
-
-impl StartBlock {
-    fn latest() -> Self {
-        StartBlock { block: BlockNumber::Latest, tail: 0 }
-    }
-
-    fn earliest() -> Self {
-        StartBlock { block: BlockNumber::Earliest, tail: 0 }
-    }
-
-    fn tail(tail: u64) -> Self {
-        StartBlock { block: BlockNumber::Latest, tail }
-    }
+pub enum StartBlock {
+    Earliest,
+    Latest,
+    Number(u64),
+    Tail(u64)
 }
 
 impl<'a> From<&'a str> for StartBlock {
     fn from(s: &'a str) -> Self {
-        let mut start_block = StartBlock::latest();
-
-        if s.starts_with("-") {
-            start_block.tail = s[1..].parse().expect("Invalid start-block");
-        } else if s == "earliest" {
-            start_block.block = BlockNumber::Number(0);
+        if s == "earliest" {
+            StartBlock::Earliest
+        } else if s == "latest" {
+            StartBlock::Latest
+        } else if s.starts_with('-') {
+            let tail: u64 = s[1..].parse().expect("Invalid tail start-block");
+            StartBlock::Tail(tail)
         } else if s.starts_with("0x") {
-            start_block.block = hex_string_to_u64(s).expect("Invalid start-block").into();
-        } else if s != "latest" {
-            start_block.block = s.parse::<u64>().expect("Invalid start-block").into();
+            let block_number = hex_string_to_u64(s).expect("Invalid hex start-block");
+            StartBlock::Number(block_number)
+        } else {
+            let block_number: u64 = s.parse().expect("Invaild decimal start-block");
+            StartBlock::Number(block_number)
         }
-
-        start_block
     }
 }
 
@@ -231,11 +219,11 @@ impl Config {
         let start_block = if let Some(s) = cli.value_of("start_block") {
             s.into()
         } else if cli.is_present("earliest") {
-            StartBlock::earliest()
+            StartBlock::Earliest
         } else if cli.is_present("latest") {
-            StartBlock::latest()
+            StartBlock::Latest
         } else if let Some(s) = cli.value_of("tail") {
-            StartBlock::tail(s.parse().expect("Invalid tail value"))
+            StartBlock::Tail(s.parse().expect("Invalid tail value"))
         } else {
             env::var("START_BLOCK").unwrap().as_str().into()
         };
