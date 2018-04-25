@@ -11,15 +11,66 @@ To build the `poagov` CLI tool, run the following:
     $ cd poagov
     $ cargo build --release
 
-*Note* `poagov` uses experimental Rust features that are currently only
-available in Rust version 1.26.0-nightly. You can check which version of
-Rust that you are using, by running:
+### Requires Rust Nightly
+
+`poagov` uses experimental Rust features that are currently only available
+in Rust version >= 1.26.0-nightly. You can check which version of Rust that
+you are using by running:
 
     $ rustc --version
 
-If you are not using Rust 1.26.0-nightly, you can switch to it using:
+If you are not using Rust >= 1.26.0-nightly, you can switch to it using:
 
     $ rustup default nightly
+
+### Requires libssl
+
+SMTP over TLS requires that you have a native TLS library installed on your
+machine, the preferred library for Linux and OSX is OpenSSL >= 1.0.1,
+otherwise known as `libssl` (you will need more than just the OpenSSL
+binary that you may or may not already have installed at
+`/usr/bin/openssl`).
+
+If running `cargo build --release` panics with an error like:
+
+    "error: failed to run custom build command for `openssl-sys v0.9.28
+    ...
+    Could not find directory of OpenSSL installation
+    ..."
+
+you probably do not have libssl installed.
+
+To install libssl on Debian/Ubuntu run the following:
+
+    $ sudo apt-get update -y
+    $ sudo apt-get install -y pkg-config libssl-dev
+
+To install libssl on MacOS run the following:
+
+    $ brew update
+    $ brew install openssl
+
+Then try to rebuild `poagov` using:
+
+    $ cargo clean
+    $ cargo build --release
+
+If you are on OSX and installed OpenSSL using Homebrew and continue to get
+compilation errors for any of the Rust crates: openssl, openssl-sys, or
+openssl-sys-extras, try building with the following:
+
+    $ cargo clean
+    $ OPENSSL_INCLUDE_DIR=$(brew --prefix openssl)/include \
+          OPENSSL_LIB_DIR=$(brew --prefix openssl)/lib \
+          cargo build
+
+There is a known issue regarding the openssl-sys crate not being able to
+find libssl installed with Homebrew on OSX that is well documented on
+[Stack Overflow](https://stackoverflow.com/questions/34612395/openssl-crate-fails-compilation-on-mac-os-x-10-11/34615626#34615626).
+The above solution comes from the linked Stack Overflow thread.
+
+More information on common issues encountered while installing the
+openssl Rust crate can be found [here](https://crates.io/crates/openssl).
 
 # Usage
 
