@@ -106,6 +106,20 @@ Once you have built `poagov`, you can print out the CLI usage by running:
         --start <value>         start monitoring for governance events at this block (inclusive)
         --tail <value>          start monitoring for governance events for the `n` blocks prior to the last mined block in the chain
 
+# Setting up the Config File
+
+When the `poagov` CLI tool is run, the process' environment variables are
+loaded via a `.env` file. An example `.env` file can be found at
+`sample.env`. Before running this tool change the name of `sample.env` to
+`.env` using:
+
+    $ mv sample.env .env
+
+This will enable `poagov's` default configuration. You can update your
+config file to allow `poagov` to use a locally running chain, governance
+contracts that you have deployed locally, and to setup email
+notifications.
+
 # Setting up Email Notifications
 
 In order to enable email notifications, you must change the name of the
