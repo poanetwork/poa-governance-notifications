@@ -1,13 +1,13 @@
-# poagov
+# About
 
-A tool to monitor the POA Network's blockchain for
+A tool to monitor a POA Network blockchain for
 [governance events](https://github.com/poanetwork/wiki/wiki/Governance-Overview).
 
 # Building
 
 To build the `poagov` CLI tool, run the following:
 
-    $ git clone git@github.com:poanetwork/poa-governance-notifications.git
+    $ git clone https://github.com/poanetwork/poa-governance-notifications.git
     $ cd poa-governance-notifications
     $ cargo build --release
 
