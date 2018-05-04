@@ -7,8 +7,8 @@ A tool to monitor the POA Network's blockchain for
 
 To build the `poagov` CLI tool, run the following:
 
-    $ git clone https://gitlab.com/DrPeterVanNostrand/poagov.git
-    $ cd poagov
+    $ git clone git@github.com:poanetwork/poa-governance-notifications.git
+    $ cd poa-governance-notifications
     $ cargo build --release
 
 ### Requires Rust Nightly
