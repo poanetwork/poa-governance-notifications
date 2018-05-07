@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/poanetwork/poa-governance-notifications.svg?branch=master)](https://travis-ci.org/poanetwork/poa-governance-notifications) 
+
 # About
 
 A tool to monitor a POA Network blockchain for
