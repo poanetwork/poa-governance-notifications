@@ -1,0 +1,10 @@
+language: rust
+
+rust:
+  - nightly
+
+cache: cargo
+
+script:
+  - RUST_BACKTRACE=1 cargo build
+

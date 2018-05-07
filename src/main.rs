@@ -1,3 +1,5 @@
+#![feature(try_from)]
+
 extern crate chrono;
 extern crate clap;
 extern crate dotenv;
@@ -46,3 +48,4 @@ fn main() {
         }
     }
 }
+
