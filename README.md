@@ -5,7 +5,34 @@
 A tool to monitor a POA Network blockchain for
 [governance events](https://github.com/poanetwork/wiki/wiki/Governance-Overview).
 
-# Building
+The `poagov` command line tool is distributed as a binary for Linux and
+OSX, or it can be built from source.
+
+# Installing the `poagov` Binary
+
+*Note:* the `poagov` binary requires libssl to be installed prior to
+usage, if you do not have libssl installed, go to the "Requires libssl"
+section in this README to find out how to download it.  
+
+On Debian/Ubuntu:
+
+    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v0.1.0/poagov-0.1.0-linux-x86_64.tar.gz
+    $ tar -xvzf poagov-0.1.0-linux-x86_64.tar.gz
+    $ rm poagov-0.1.0-linux-x86_64.tar.gz
+    $ cd poagov
+    $ chmod +x poagov
+    $ ./poagov --help
+
+On OSX:
+
+    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v0.1.0/poagov-0.1.0-osx-x86_64.tar.gz
+    $ tar -xvzf poagov-0.1.0-osx-x86_64.tar.gz
+    $ rm poagov-0.1.0-osx-x86_64.tar.gz
+    $ cd poagov
+    $ chmod +x poagov
+    $ ./poagov --help
+
+# Building the `poagov` Binary from Source
 
 To build the `poagov` CLI tool, run the following:
 
