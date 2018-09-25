@@ -1,30 +1,114 @@
+#![allow(dead_code)]
+
 use clap::{ArgMatches, App};
 
-pub struct Cli;
+#[derive(Debug)]
+pub struct Cli(ArgMatches<'static>);
 
 impl Cli {
-    pub fn load() -> ArgMatches<'static> {
-        App::new("poagov")
-            .version("1.0")
-            .about("A tool to monitor POA Network's blockchain for governance events.")
+    pub fn parse() -> Self {
+        let cli_args = App::new("poagov")
+            .version("1.0.0")
+            .about("Monitors a POA Network blockchain for governance events.")
             .args_from_usage(
-                "[network] --network [value] 'the name of the network to monitor for ballots; the values available for this option are: core, sokol, local'
-                [core] --core 'monitor voting contracts deployed to the Core network (same as using --network=core)'
-                [sokol] --sokol 'monitor voting contracts deployed to the Sokol test network (same as using --network=sokol)'
-                [local] --local 'monitor voting contracts deployed to a locally running POA chain (same as using --network=local)'
-                [rpc] --rpc [value] 'the URL for the RPC endpoint'
-                [monitor] --monitor [value] 'a comma-separated list of ballot types to monitor for governance events; the available values are: keys, threshold, proxy`
-                [keys] -k 'monitor the blockchain for ballots to change keys (same as --monitor=keys)'
-                [threshold] -t 'monitor the chain for ballots to change the minimum threshold (same as --monitor=threshold)'
-                [proxy] -p 'monitor the change for ballots to change the proxy address (same as --monitor=proxy)'
+                "[core] --core 'monitor voting contracts deployed to the Core network'
+                [sokol] --sokol 'monitor voting contracts deployed to the Sokol network'
+                [keys] -k --keys 'monitors the blockchain for ballots to change keys'
+                [threshold] -t --threshold 'monitors the blockchain for ballots to change the minimum threshold'
+                [proxy] -p --proxy 'monitors the blockchain for ballots to change the proxy address'
+                [emission] -e --emission 'monitors the blockchain for ballots to manage emission funds'
+                [v1] --v1 'monitors the v1 voting contracts'
+                [v2] --v2 'monitors the v2 voting contracts'
+                [earliest] --earliest 'begin monitoring for governance events starting at the first block in the blockchain'
+                [latest] --latest 'begin monitoring for governance events starting at the last block mined'
                 [start_block] --start [value] 'start monitoring for governance events at this block (inclusive)'
-                [tail] --tail [value] 'start monitoring for governance events for the `n` blocks prior to the last mined block in the chain'
-                [earliest] --earliest 'start monitoring for goverance events starting from the first block in the chain'
-                [latest] --latest 'start monitoring for goverance events starting from the most recently mined block in the chain'
-                [email] --email 'send governance notifications via email'
-                [push] --push 'send governance notifications via push notification'
-                [block_time] --block-time [value] 'the average time it takes to mine a new block'"
-            )
-            .get_matches()
+                [tail] --tail [value] 'start monitoring for governance events for the `n` blocks prior to the last block mined'
+                [email] --email 'enables email notifications (SMTP configurations must be set in your `.env` file)'
+                [block_time] --block-time [value] 'the average number of seconds it takes to mine a new block'
+                [notification_limit] -n --limit [value] 'shutdown `poagov` after this many notifications have been generated'
+                [verbose_logs] --verbose 'prints the full notification email's body when logging'"
+            ).get_matches();
+        Cli(cli_args)
+    }
+
+    pub fn core(&self) -> bool {
+        self.0.is_present("core")
+    }
+
+    pub fn sokol(&self) -> bool {
+        self.0.is_present("sokol")
+    }
+    
+    pub fn keys(&self) -> bool {
+        self.0.is_present("keys")
+    }
+
+    pub fn threshold(&self) -> bool {
+        self.0.is_present("threshold")
+    }
+ 
+    pub fn proxy(&self) -> bool {
+        self.0.is_present("proxy")
+    }
+
+    pub fn emission(&self) -> bool {
+        self.0.is_present("emission")
+    }
+
+    pub fn v1(&self) -> bool {
+        self.0.is_present("v1")
+    }
+
+    pub fn v2(&self) -> bool {
+        self.0.is_present("v2")
+    }
+    
+    pub fn earliest(&self) -> bool {
+        self.0.is_present("earliest")
+    }
+
+    pub fn latest(&self) -> bool {
+        self.0.is_present("latest")
+    }
+
+    pub fn start_block(&self) -> Option<&str> {
+        self.0.value_of("start_block")
+    }
+
+    pub fn tail(&self) -> Option<&str> {
+        self.0.value_of("tail")
+    }
+
+    pub fn multiple_start_blocks_specified(&self) -> bool {
+        let mut count = 0;
+        if self.earliest() {
+            count += 1;
+        }
+        if self.latest() {
+            count += 1;
+        }
+        if self.start_block().is_some() {
+            count += 1;
+        }
+        if self.tail().is_some() {
+            count += 1;
+        }
+        count != 1
+    }
+
+    pub fn email(&self) -> bool {
+        self.0.is_present("email")
+    }
+
+    pub fn block_time(&self) -> Option<&str> {
+        self.0.value_of("block_time")
+    }
+
+    pub fn notification_limit(&self) -> Option<&str> {
+        self.0.value_of("notification_limit")
+    }
+
+    pub fn verbose_logs(&self) -> bool {
+        self.0.is_present("verbose_logs")
     }
 }

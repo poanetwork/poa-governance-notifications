@@ -1,24 +1,26 @@
 [package]
 name = "poagov"
 version = "1.0.0"
-authors = ["Peter van Nostrand <jnz@riseup.net>"]
+authors = ["DrPeterVanNostrand <jnz@riseup.net>"]
 
 [dependencies]
-chrono = "0.4"
-clap = "2.31.2"
-dotenv = "0.11.0"
-ethabi = "5.1.1"
-ethereum-types = "0.3.1"
-hex = "0.3.1"
+chrono = "0.4.6"
+clap = "2.32.0"
+ctrlc = "3.1.1"
+dotenv = "0.13.0"
+ethabi = "6.0.1"
+ethereum-types = "0.4.0"
+failure = "0.1.2"
+hex = "0.3.2"
 jsonrpc-core = "8.0.1"
-lazy_static = "1.0.0"
-lettre = "0.8"
-lettre_email = "0.8"
-native-tls = "0.1.5"
-reqwest = "0.8.5"
-serde = "1.0.36"
-serde_derive = "1.0.36"
-serde_json = "1.0.13"
-slog = { version = "2.2.3", features = ["release_max_level_trace"] }
+# TODO: after `lettre` and `lettre_email` v0.9.x have been published to crates.io, remove these
+# GitHub dependencies.
+lettre = { git = "https://github.com/lettre/lettre.git" }
+lettre_email = { git = "https://github.com/lettre/lettre.git" }
+native-tls = "0.2"
+lazy_static = "1.1.0"
+reqwest = "0.8.8"
+serde_json = "1.0.27"
+slog = { version = "2.3.3", features = ["release_max_level_trace"] }
 slog-term = "2.4.0"
-web3 = "0.3.0"
+web3 = "0.4.0"

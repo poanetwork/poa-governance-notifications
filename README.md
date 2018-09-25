@@ -6,7 +6,7 @@ A tool to monitor a POA Network blockchain for
 [governance events](https://github.com/poanetwork/wiki/wiki/Governance-Overview).
 
 The `poagov` command line tool is distributed as a binary for Linux and
-OSX, or it can be built from source.
+OSX; it can also be built from source for both platforms.
 
 # Installing the `poagov` Binary
 
@@ -16,23 +16,27 @@ section in this README to find out how to download it.
 
 On Debian/Ubuntu:
 
-    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v0.1.0/poagov-0.1.0-linux-x86_64.tar.gz
-    $ tar -xvzf poagov-0.1.0-linux-x86_64.tar.gz
-    $ rm poagov-0.1.0-linux-x86_64.tar.gz
+    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v1.0.0/poagov-1.0.0-linux-x86_64.tar.gz
+    $ tar -xvzf poagov-1..0-linux-x86_64.tar.gz
+    $ rm poagov-1.0.0-linux-x86_64.tar.gz
     $ cd poagov
     $ chmod +x poagov
     $ ./poagov --help
 
 On OSX:
 
-    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v0.1.0/poagov-0.1.0-osx-x86_64.tar.gz
-    $ tar -xvzf poagov-0.1.0-osx-x86_64.tar.gz
-    $ rm poagov-0.1.0-osx-x86_64.tar.gz
+    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v1.0.0/poagov-1.0.0-osx-x86_64.tar.gz
+    $ tar -xvzf poagov-1.0.0-osx-x86_64.tar.gz
+    $ rm poagov-1.0.0-osx-x86_64.tar.gz
     $ cd poagov
     $ chmod +x poagov
     $ ./poagov --help
 
-# Building the `poagov` Binary from Source
+Make sure you have an `.env` file in the same directory as the `poagov`
+binary; see the section "Setting up the `.env` File" for more
+information.
+
+# Building `poagov` from Source
 
 To build the `poagov` CLI tool, run the following:
 
@@ -40,19 +44,15 @@ To build the `poagov` CLI tool, run the following:
     $ cd poa-governance-notifications
     $ cargo build --release
 
-### Requires Rust Nightly
+`poagov` can be built using Rust 1.29 stable and requires `libssl` to be
+installed; see the following "Requires libssl" section for more information.
 
-`poagov` uses experimental Rust features that are currently only available
-in Rust version >= 1.26.0-nightly. You can check which version of Rust that
-you are using by running:
+You can run `poagov`'s tests via the following command (make sure to copy
+`sample.env` into `.env` before testing):
 
-    $ rustc --version
+    $ cargo test
 
-If you are not using Rust >= 1.26.0-nightly, you can switch to it using:
-
-    $ rustup default nightly
-
-### Requires libssl
+### Requires `libssl`
 
 SMTP over TLS requires that you have a native TLS library installed on your
 machine, the preferred library for Linux and OSX is OpenSSL >= 1.0.1,
@@ -60,18 +60,18 @@ otherwise known as `libssl` (you will need more than just the OpenSSL
 binary that you may or may not already have installed at
 `/usr/bin/openssl`).
 
-If running `cargo build --release` panics with an error like:
+If running `cargo build [--release]` panics with an error like:
 
     "error: failed to run custom build command for `openssl-sys v0.9.28
     ...
     Could not find directory of OpenSSL installation
     ..."
 
-you probably do not have libssl installed.
+you probably do not have `libssl` installed.
 
-To install libssl on Debian/Ubuntu run the following:
+To install `libssl` on Debian/Ubuntu run the following:
 
-    $ sudo apt-get update -y
+    $ sudo apt update
     $ sudo apt-get install -y pkg-config libssl-dev
 
 To install libssl on MacOS run the following:
@@ -85,69 +85,107 @@ Then try to rebuild `poagov` using:
     $ cargo build --release
 
 If you are on OSX and installed OpenSSL using Homebrew and continue to get
-compilation errors for any of the Rust crates: openssl, openssl-sys, or
-openssl-sys-extras, try building with the following:
+compilation errors for any of the Rust crates: `openssl`, `openssl-sys`, or
+`openssl-sys-extras`, try building with the following:
 
     $ cargo clean
     $ OPENSSL_INCLUDE_DIR=$(brew --prefix openssl)/include \
           OPENSSL_LIB_DIR=$(brew --prefix openssl)/lib \
-          cargo build
+          cargo build [--release]
 
-There is a known issue regarding the openssl-sys crate not being able to
-find libssl installed with Homebrew on OSX that is well documented on
+There is a known issue regarding the `openssl-sys` crate not being able to
+find `libssl` installed with Homebrew on OSX; more information can be found on
 [Stack Overflow](https://stackoverflow.com/questions/34612395/openssl-crate-fails-compilation-on-mac-os-x-10-11/34615626#34615626).
 The above solution comes from the linked Stack Overflow thread.
 
 More information on common issues encountered while installing the
-openssl Rust crate can be found [here](https://crates.io/crates/openssl).
+`openssl` Rust crate can be found [here](https://crates.io/crates/openssl).
 
 # Usage
 
-Once you have built `poagov`, you can print out the CLI usage by running:
+Once you have built or downloaded `poagov`, you can print out the CLI usage by
+running:
 
-    $ ./target/release/poagov --help
+    $ poagov --help
+    # If built from source run:
+    # $ ./target/{debug, release}/poagov --help
 
-    poagov 1.0
-    Monitores the POA Network's blockchain for governance events.
+    poagov 1.0.0
+    Monitors a POA Network blockchain for governance events.
 
     USAGE:
         poagov [FLAGS] [OPTIONS]
 
     FLAGS:
-            --core        monitor voting contracts deployed to the Core network (same as using --network=core)
-            --earliest    start monitoring for goverance events starting from the first block in the chain
-            --email       send governance notifications via email
-        -h, --help        prints help information
-        -k                monitor the blockchain for ballots to change keys (same as --monitor=keys)
-            --latest      start monitoring for goverance events starting from the most recently mined block in the chain
-            --local       monitor voting contracts deployed to a locally running POA chain (same as using --network=local)
-        -p                monitor the change for ballots to change the proxy address (same as --monitor=proxy)
-            --push        send governance notifications via push notification
-            --sokol       monitor voting contracts deployed to the Sokol test network (same as using --network=sokol)
-        -t                monitor the chain for ballots to change the minimum threshold (same as --monitor=threshold)
-        -V, --version     prints version information
+        --core             monitor voting contracts deployed to the Core network
+	--earliest         begin monitoring for governance events starting at the first block in the blockchain
+	--email            enables email notifications (SMTP configurations must be set in your `.env` file)
+	-e, --emission     monitors the blockchain for ballots to manage emission funds
+	-h, --help         Prints help information
+	-k, --keys         monitors the blockchain for ballots to change keys
+	--latest           begin monitoring for governance events starting at the last block mined
+	-p, --proxy        monitors the blockchain for ballots to change the proxy address
+	--sokol            monitor voting contracts deployed to the Sokol network
+	-t, --threshold    monitors the blockchain for ballots to change the minimum threshold
+	--v1               monitors the v1 voting contracts
+	--v2               monitors the v2 voting contracts
+	-V, --version      Prints version information
+	--verbose          prints the full notification email's body when logging
 
     OPTIONS:
-        --block-time <value>    the average time it takes to mine a new block
-        --monitor <value>       a comma-separated list of ballot types to monitor for governance events; the available values are: keys, threshold, proxy
-        --network <value>       the name of the network to monitor for ballots; the values available for this option are: core, sokol, local
-        --rpc <value>           the URL for the RPC endpoint
-        --start <value>         start monitoring for governance events at this block (inclusive)
-        --tail <value>          start monitoring for governance events for the `n` blocks prior to the last mined block in the chain
+	--block-time <value>    the average number of seconds it takes to mine a new block
+        -n, --limit <value>     shutdown `poagov` after this many notifications have been generated
+	--start <value>         start monitoring for governance events at this block (inclusive)
+	--tail <value>          start monitoring for governance events for the `n` blocks prior to the last block minedV
 
-# Setting up the Config File
+### Required Arguments
+
+Each time you run `poagov`, four CLI arguments are required:
+
+1. The chain that you want to monitor. Uou must specify one and only one of
+the following arguments: `--core` or `--sokol`.
+2. The hardfork version. You must specify one of the following: `--v1` or `--v2`.
+    - `--v1` indicates that you want to monitor for governance events prior to
+    the Sokol and Core hardforks that will occur in September-2018 and
+    November-2018 respectively.
+    - `--v2` indicates that you want to monitor for governance events that
+    occured after the above hardfork dates.
+    - More information regarding the planned hardforks for the Sokol and Core
+    chains in September and November 2018 can be found
+    [here](https://medium.com/poa-network/poa-network-news-and-updates-36-2e6e00550c15).
+3. The ballots that you want to monitor for governance events. You must specify
+one or more of the following arguments: `-k`/`--keys`, `-t`/`--threshold`,
+`-p`/`--proxy`, and/or `-e`/`--emission`.
+    - Note that the `VotingToManageEmissionFunds.sol` contract (i.e. the
+    `--emission` option) is not available in `--v1`.
+4. The point in the chain for where to start monitoring. You must specify one
+and only one of the following: `--earliest`, `--latest`, `--start=<value>`, or
+`--tail=<value>`.
+
+### Optional Arguments
+
+Providing the `--email` flag will enable governance notification emails. To use
+this option, you must first configure SMTP in your `.env`.
+
+Providing the `--block-time=<value>` will set how often `poagov` will query the
+blockchain for new governance events. Defaults to 30 seconds.
+
+Providing the `--verbose` flag will print the full text for a notification
+email to stderr when governance events are found. When this option is set,
+email text will be logged regardless of whether or not the `--email` flag is
+set.
+
+# Setting up the `.env` File
 
 When the `poagov` CLI tool is run, the process' environment variables are
-loaded via a `.env` file. An example `.env` file can be found at
-`sample.env`. Before running this tool change the name of `sample.env` to
-`.env` using:
+loaded via an `.env` file. Before running `poagove` copy `sample.env` into
+`.env`:
 
-    $ mv sample.env .env
+    $ cp sample.env .env
 
-This will enable `poagov's` default configuration. You can update your
-config file to allow `poagov` to use a locally running chain, governance
-contracts that you have deployed locally, and to setup email
-notifications.
+This will enable `poagov's` default configuration. Before enabling email
+notifications, you must add the required SMTP configuration values to your
+`.env` file.
 
 # Setting up Email Notifications
 
@@ -155,6 +193,7 @@ In order to enable email notifications, you must change the name of the
 `sample.env` file to `.env`. Then, you must add values for the following
 SMTP config options in your `.env` file:
 
+    EMAIL_RECIPIENTS=
     SMTP_HOST_DOMAIN=
     SMTP_PORT=
     SMTP_USERNAME=
@@ -172,36 +211,42 @@ but you may use port 465 for TLS, or any other port that your outgoing
 email server is lisening for secure connections. If you require unencrypted
 SMTP, submit an issue and I can add it.
 
+Your SMTP configuration should look something like the following:
+
+    EMAIL_RECIPIENTS=alice@poa.network,bob@poa.network
+    SMTP_HOST_DOMAIN=mail.riseup.net
+    SMTP_PORT=587
+    SMTP_USERNAME=evariste_galois
+    SMTP_PASSWORD='finteFIELDS#$!'
+    OUTGOING_EMAIL_ADDRESS=evariste_galois@riseup.net
+
 # An Explained Example
 
-    $ ./target/release/poagov --sokol --earliest -kt --email
+    $ poagov --sokol --earliest -kt --email --verbose
 
 - `--sokol` is used to monitor contracts deployed to POA's test network.
 - `--earliest` starts monitoring from the first block in the blockchain.
 - `-k` get notifications for ballots to change keys.
 - `-t` get notifications for ballots to change the min threshold.
 - `--email` sends out email notifications to each address in the
-"VALIDATORS" config value (located in the .env file).
+`EMAIL_RECIPIENTS` env-var.
+- `--verbose` writes each governance notification email to stderr.
 
 Press [ctrl-c] to exit `poagov`.
 
 # Logs
 
-Logs are output to stderr. Any notifications that were generated, sent,
-or failed to be sent will be logged. The following is an example log for a
-a notification for a ballot to change the min threshold that was generated
-using the command `$ poagov --earliest -t`:
+Logs are output to stderr. Logs include: governance notifications, email
+successes/failures, and blocks that have been successfully monitored for
+governance events. The following is an example command with its corresponding
+logs:
 
-    Apr 21 08:31:54.219 INFO notification, data: ThresholdNotification {
-        network: Sokol,
-        endpoint: "https://sokol.poa.network",
-        block_number: 1078816,
-        contract_type: Threshold,
-        ballot_type: ChangeMinThreshold,
-        ballot_id: 2,
-        start_time: 2018-02-23T05:28:22Z,
-        end_time: 2018-02-25T05:33:00Z,
-        memo: "*TEST* ballot to increase the consensus threshold to 51% (rounded to the higher integer) of the total number of validators. The idea is to legitimize passing the ballot by the majority participation.",
-        proposed_value: 4
-    }
+    $ poagov --sokol --v1 --threshold --earliest
+
+    Sep 25 13:43:16.712 INFO governance notification, block_number: 525296, ballot_id: 0, ballot: Threshold
+    Sep 25 13:43:16.712 INFO governance notification, block_number: 599789, ballot_id: 1, ballot: Threshold
+    Sep 25 13:43:16.712 INFO governance notification, block_number: 1078816, ballot_id: 2, ballot: Threshold
+    Sep 25 13:43:16.712 INFO finished checking blocks, block_range: Number(0)...Number(4729306)
+    Sep 25 13:43:46.761 INFO finished checking blocks, block_range: Number(4729307)...Number(4729312)
+    Sep 25 13:43:48.503 WARN recieved ctrl-c signal, gracefully shutting down...
 
