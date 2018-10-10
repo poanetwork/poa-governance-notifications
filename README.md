@@ -28,7 +28,6 @@ On Debian/Ubuntu:
     $ tar -xvzf poagov-1.0.0-linux-x86_64.tar.gz
     $ rm poagov-1.0.0-linux-x86_64.tar.gz
     $ cd poagov
-    $ cp sample.env .env
     $ chmod +x poagov
     $ ./poagov --help
 
@@ -38,7 +37,6 @@ On OSX:
     $ tar -xvzf poagov-1.0.0-osx-x86_64.tar.gz
     $ rm poagov-1.0.0-osx-x86_64.tar.gz
     $ cd poagov
-    $ cp sample.env .env
     $ chmod +x poagov
     $ ./poagov --help
 
@@ -51,11 +49,8 @@ To build the `poagov` CLI tool, run the following:
     $ cd poa-governance-notifications
     $ cargo build --release
 
-`poagov` can be built using Rust 1.29 stable and requires `libssl` to be
-installed; see the following "Requires libssl" section for more information.
-
-Building `poagov` requires Rust `1.29.0-stable` or later and `libssl`; see the
-"Requires `libssl`" section for more information.
+`poagov` can be built with Rust 1.29.1-stable or later and requires `libssl`;
+see the following "Requires libssl" section for more information.
 
 ### Testing
 
@@ -205,23 +200,22 @@ number of notifications have been generated. This option is useful when testing.
 # Setting up the `.env` File
 
 When the `poagov` CLI tool is run, the process' environment variables are
-loaded via an `.env` file.
+loaded via an `.env` file. The `.env` file contains configuration variables
+that are not specified via the command line. You are required to have an `.env`
+file in the same directory as your `Cargo.toml` or `poagov` binary.
 
-The `.env` file contains configuration variables that are not specified via the
-command line. You are required to have an `.env` file in the same directory as
-your `Cargo.toml` or `poagov` binary.
+If you downloaded a `.tar.gz` compressed archive containing the `poagov` binary
+and you do not have an `.env` file in the unarchived directory, manually copy
+the `sample.env` file in this repo into a file called `.env` in the same
+directory as the `poagov` binary.
 
 When building from source, the `sample.env` file will be copied into the `.env`
-file. This `.env` file will contain the default configuration values required
-to run `poagov`.
+file.
 
-If you did not build `poagov` from source, you will have to create an `.env`
-file in the same directory as the `poagov` binary; then copy the contents of
-`sample.env` into it.
-
-If you wish to enable email notifications, you must add the required SMTP
-config values to your `.env` file. See the "Setting up Email Notifications"
-section for details.
+The default `.env` file will contain the default configuration values required
+to run `poagov`. If you wish to enable email notifications, you must add the
+required SMTP config values to your `.env` file. See the "Setting up Email
+Notifications" section for details.
 
 ### Setting up Email Notifications
 
