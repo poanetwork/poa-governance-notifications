@@ -59,11 +59,11 @@ Building `poagov` requires Rust `1.29.0-stable` or later and `libssl`; see the
 
 ### Testing
 
-You can run `poagov`'s tests to ensure that it everything is working properly:
+You can run `poagov`'s tests to ensure that everything is working properly:
 
     $ cargo test --release
 
-The test suite will verify: that the required env-vars are found the `.env`
+The test suite will verify: that the required env-vars are found in the `.env`
 file, that each network's JSON-RPC server can be reached, and that each
 contract ABI can be loaded.
 
