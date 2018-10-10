@@ -7,7 +7,6 @@ use ethabi::{Address, Contract, Event, Function};
 
 use cli::Cli;
 use error::{Error, Result};
-use logger::log_no_email_recipients_configured;
 use response::common::BallotType;
 
 const DEFAULT_BLOCK_TIME_SECS: u64 = 30;
@@ -178,8 +177,9 @@ pub struct Config {
     pub smtp_username: Option<String>,
     pub smtp_password: Option<String>,
     pub outgoing_email_addr: Option<String>,
-    pub notification_limit: Option<u64>,
-    pub verbose_logs: bool,
+    pub notification_limit: Option<usize>,
+    pub log_emails: bool,
+    pub log_to_file: bool,
 }
 
 impl Config {
@@ -281,10 +281,6 @@ impl Config {
             })
             .collect();
 
-        if email_notifications && email_recipients.is_empty() {
-            log_no_email_recipients_configured();
-        }
-
         let smtp_host_domain = if email_notifications {
             let host = env::var("SMTP_HOST_DOMAIN")
                 .map_err(|_| Error::MissingEnvVar("SMTP_HOST_DOMAIN".into()))?;
@@ -335,7 +331,8 @@ impl Config {
             None
         };
 
-        let verbose_logs = cli.verbose_logs();
+        let log_emails = cli.log_emails();
+        let log_to_file = cli.log_to_file();
 
         let config = Config {
             network,
@@ -352,7 +349,8 @@ impl Config {
             smtp_password,
             outgoing_email_addr,
             notification_limit,
-            verbose_logs,
+            log_emails,
+            log_to_file,
         };
         Ok(config)
     }
@@ -362,9 +360,8 @@ impl Config {
 mod tests {
     use std::env;
 
-    use dotenv::dotenv;
-    
-    use super::*;
+    use super::super::tests::setup;
+    use super::{ContractType, ContractVersion, PoaContract, Network};
 
     const CONTRACT_TYPES: [ContractType; 4] = [ 
             ContractType::Keys,
@@ -376,18 +373,14 @@ mod tests {
     const VERSIONS: [ContractVersion; 2] = [ContractVersion::V1, ContractVersion::V2];
 
     #[test]
-    fn test_load_env_vars() {
-        assert!(dotenv().is_ok(), "Missing .env file");
+    fn test_env_file_integrity() {
+        setup();
         for network in NETWORKS.iter() {
             let env_var = format!("{}_RPC_ENDPOINT", network.uppercase());
             assert!(env::var(&env_var).is_ok());
             for contract_type in CONTRACT_TYPES.iter() {
                 for version in VERSIONS.iter() {
                     if *contract_type == ContractType::Emission && *version == ContractVersion::V1 {
-                        continue;
-                    }
-                    // TODO: remove this block once V2 is published to core.
-                    if *network == Network::Core && *version == ContractVersion::V2 {
                         continue;
                     }
                     let env_var = format!(
@@ -404,14 +397,10 @@ mod tests {
 
     #[test]
     fn test_load_contract_abis() {
-        dotenv().expect("Missing .env file");
+        setup();
         for contract_type in CONTRACT_TYPES.iter() {
             for version in VERSIONS.iter() {
                 for network in NETWORKS.iter() {
-                    // TODO: remove this block once V2 is published to core.
-                    if *network == Network::Core && *version == ContractVersion::V2 {
-                        continue;
-                    }
                     let res = PoaContract::read(*contract_type, *network, *version);
                     if *contract_type == ContractType::Emission && *version == ContractVersion::V1 {
                         assert!(res.is_err());

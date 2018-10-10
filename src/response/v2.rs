@@ -302,7 +302,7 @@ pub struct EmissionBallotInfo {
     pub is_finalized: bool,
     pub creator: Address,
     pub memo: String,
-    pub ammount: U256,
+    pub amount: U256,
     pub burn_votes: U256,
     pub freeze_votes: U256,
     pub send_votes: U256,
@@ -327,7 +327,7 @@ impl From<Vec<ethabi::Token>> for EmissionBallotInfo {
         let is_finalized = tokens[4].clone().to_bool().unwrap();
         let creator = tokens[5].clone().to_address().unwrap();
         let memo = tokens[6].clone().to_string().unwrap();
-        let ammount = tokens[7].clone().to_uint().unwrap();
+        let amount = tokens[7].clone().to_uint().unwrap();
         let burn_votes = tokens[8].clone().to_uint().unwrap();
         let freeze_votes = tokens[9].clone().to_uint().unwrap();
         let send_votes = tokens[10].clone().to_uint().unwrap();
@@ -340,7 +340,7 @@ impl From<Vec<ethabi::Token>> for EmissionBallotInfo {
             is_finalized,
             creator,
             memo,
-            ammount,
+            amount,
             burn_votes,
             freeze_votes,
             send_votes,
@@ -355,7 +355,7 @@ impl EmissionBallotInfo {
             "Creation Time: {}\n\
             Voting Start Time: {}\n\
             Voting End Time: {}\n\
-            Ammount: {}\n\
+            Amount: {}\n\
             Burn Votes: {}\n\
             Freeze Votes: {}\n\
             Send Votes: {}\n\
@@ -367,7 +367,7 @@ impl EmissionBallotInfo {
             self.creation_time,
             self.start_time,
             self.end_time,
-            self.ammount,
+            convert_wei_to_poa(self.amount),
             self.burn_votes,
             self.freeze_votes,
             self.send_votes,
@@ -378,4 +378,20 @@ impl EmissionBallotInfo {
             self.memo,
         )
     }
+}
+
+/// Converts the `amount` field found in the `VotingToManageEmissionFunds` contract from Wei to
+/// POA.
+fn convert_wei_to_poa(amount_in_wei: U256) -> f64 {
+    let whole_poa = amount_in_wei / U256::exp10(18);
+    let remaining_poa = {
+        let whole_with_padding = whole_poa * U256::exp10(18);
+        (amount_in_wei - whole_with_padding).low_u64() as f64
+    };
+    let fraction_of_a_poa = {
+        let eighteen_zeros: String = (0..18).map(|_| '0').collect();
+        let max_fract: f64 = format!("1{}", eighteen_zeros).parse().unwrap();
+        remaining_poa / max_fract
+    };
+    whole_poa.low_u64() as f64 + fraction_of_a_poa
 }

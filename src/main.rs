@@ -7,8 +7,6 @@ extern crate ethereum_types;
 extern crate failure;
 extern crate hex;
 extern crate jsonrpc_core;
-#[macro_use]
-extern crate lazy_static;
 extern crate lettre;
 extern crate lettre_email;
 extern crate native_tls;
@@ -28,7 +26,7 @@ mod logger;
 mod notify;
 mod response;
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use blockchain::BlockchainIter;
@@ -36,41 +34,42 @@ use cli::Cli;
 use client::RpcClient;
 use config::{Config, ContractVersion};
 use error::{Error, Result};
-use logger::{log_ctrlc, log_finished_block_window, log_reached_notification_limit};
+use logger::Logger;
 use notify::{Notification, Notifier};
 
-fn load_dotenv_file() -> Result<()> {
+fn load_env_file() {
     if let Err(e) = dotenv::dotenv() {
-        if let dotenv::Error::Io(_) = e {
-            Err(Error::EnvFileNotFound(e))
-        } else {
-            Err(Error::FailedToParseEnvFile(e))
-        }
-    } else {
-        Ok(())
+        match e {
+            dotenv::Error::Io(_) => panic!("could not find .env file"),
+            _ => panic!("coule not parse .env file"),
+        };
     }
 }
 
-fn set_ctrlc_handler() -> Result<Arc<AtomicBool>> {
+fn set_ctrlc_handler(logger: Arc<Mutex<Logger>>) -> Result<Arc<AtomicBool>> {
     let running = Arc::new(AtomicBool::new(true));
-    {
-        let running = running.clone();
-        ctrlc::set_handler(move || {
-            log_ctrlc();
-            running.store(false, Ordering::SeqCst);
-        }).map_err(|e| Error::CtrlcError(e))?;
-    }
-    Ok(running)
+    let result = Ok(running.clone()); 
+    ctrlc::set_handler(move || {
+        logger.lock().unwrap().log_ctrlc();
+        running.store(false, Ordering::SeqCst);
+    }).map_err(|e| Error::CtrlcError(e))?;
+    result
 }
 
 fn main() -> Result<()> {
-    load_dotenv_file()?;
+    load_env_file();
+    
     let cli = Cli::parse();
     let config = Config::new(&cli)?;
-    let running = set_ctrlc_handler()?;
+    let logger = Arc::new(Mutex::new(Logger::new(&config)));
+    if config.email_notifications && config.email_recipients.is_empty() {
+        logger.lock().unwrap().log_no_email_recipients_configured();
+    }
+    let running = set_ctrlc_handler(logger.clone())?;
     let client = RpcClient::new(config.endpoint.clone());
-    let mut notifier = Notifier::new(&config)?;
-    let mut notification_count = 0;
+    let mut notifier = Notifier::new(&config, logger.clone())?;
+    logger.lock().unwrap().log_starting_poagov();
+
     'main_loop: for iter_res in BlockchainIter::new(&client, &config, running)? {
         let (start_block, stop_block) = iter_res?;
         let mut notifications = vec![];
@@ -96,15 +95,30 @@ fn main() -> Result<()> {
         });
         for notification in notifications.iter() {
             notifier.notify(notification);
-            if let Some(notification_limit) = config.notification_limit {
-                notification_count += 1;
-                if notification_count >= notification_limit {
-                    log_reached_notification_limit(notification_limit);
-                    break 'main_loop;
-                }
+            if notifier.reached_limit() {
+                let limit = config.notification_limit.unwrap();
+                logger.lock().unwrap().log_reached_notification_limit(limit);
+                break 'main_loop;
             }
         }
-        log_finished_block_window(start_block, stop_block);
+        logger.lock().unwrap().log_finished_block_window(start_block, stop_block);
     }
+
     Ok(())
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::load_env_file;
+
+    static mut LOADED_ENV_FILE: bool = false;
+
+    pub fn setup() {
+        unsafe {
+            if !LOADED_ENV_FILE {
+                load_env_file();
+                LOADED_ENV_FILE = true;
+            }
+        }
+    }
 }

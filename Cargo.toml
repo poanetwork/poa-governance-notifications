@@ -1,7 +1,9 @@
 [package]
 name = "poagov"
 version = "1.0.0"
+license = "GPL-3.0"
 authors = ["DrPeterVanNostrand <jnz@riseup.net>"]
+build = "build.rs"
 
 [dependencies]
 chrono = "0.4.6"
@@ -18,7 +20,6 @@ jsonrpc-core = "8.0.1"
 lettre = { git = "https://github.com/lettre/lettre.git" }
 lettre_email = { git = "https://github.com/lettre/lettre.git" }
 native-tls = "0.2"
-lazy_static = "1.1.0"
 reqwest = "0.8.8"
 serde_json = "1.0.27"
 slog = { version = "2.3.3", features = ["release_max_level_trace"] }

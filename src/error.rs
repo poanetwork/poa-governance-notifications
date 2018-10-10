@@ -1,5 +1,4 @@
 use ctrlc;
-use dotenv;
 use jsonrpc_core;
 use ethabi;
 use failure;
@@ -13,12 +12,10 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 pub enum Error {
     CtrlcError(ctrlc::Error),
     EmissionFundsV1ContractDoesNotExist,
-    EnvFileNotFound(dotenv::Error),
     FailedToBuildEmail(failure::Error),
     FailedToBuildRequest(reqwest::Error),
     FailedToBuildTls(native_tls::Error),
     FailedToParseBallotCreatedLog(String),
-    FailedToParseEnvFile(dotenv::Error),
     FailedToParseRawLogToLog(ethabi::Error),
     FailedToResolveSmtpHostDomain(lettre::smtp::error::Error),
     FailedToSendEmail(lettre::smtp::error::Error),

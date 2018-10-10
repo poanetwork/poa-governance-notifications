@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use lettre::{SendableEmail, Transport};
 use lettre::smtp::{ClientSecurity, ConnectionReuseParameters, SmtpClient, SmtpTransport};
 use lettre::smtp::authentication::{Credentials, Mechanism};
@@ -7,10 +9,7 @@ use native_tls::TlsConnector;
 
 use config::Config;
 use error::{Error, Result};
-use logger::{
-    log_email_sent, log_failed_to_build_email, log_failed_to_send_email, log_notification,
-    log_notification_verbose,
-};
+use logger::Logger;
 use response::common::BallotCreatedLog;
 use response::v1::VotingState;
 use response::v2::BallotInfo;
@@ -99,10 +98,12 @@ impl<'a> Notification<'a> {
 pub struct Notifier<'a> {
     config: &'a Config,
     emailer: Option<SmtpTransport>,
+    logger: Arc<Mutex<Logger>>,
+    notification_count: usize,
 }
 
 impl<'a> Notifier<'a> {
-    pub fn new(config: &'a Config) -> Result<Self> {
+    pub fn new(config: &'a Config, logger: Arc<Mutex<Logger>>) -> Result<Self> {
         let emailer = if config.email_notifications {
             let domain = config.smtp_host_domain.clone().unwrap();
             let port = config.smtp_port.unwrap();
@@ -126,30 +127,39 @@ impl<'a> Notifier<'a> {
         } else {
             None
         };
-        Ok(Notifier { config, emailer })
+        Ok(Notifier { config, emailer, logger, notification_count: 0 })
     }
 
     pub fn notify(&mut self, notif: &Notification) {
-        if self.config.verbose_logs {
-            log_notification_verbose(notif);
+        if self.config.log_emails {
+            self.logger.lock().unwrap().log_notification_email_body(notif);
         } else {
-            log_notification(notif);
+            self.logger.lock().unwrap().log_notification(notif);
         }
         if self.config.email_notifications {
             for recipient in self.config.email_recipients.iter() {
                 let email: SendableEmail = match self.build_email(notif, recipient) {
                     Ok(email) => email.into(),
                     Err(e) => {
-                        log_failed_to_build_email(e);
+                        self.logger.lock().unwrap().log_failed_to_build_email(e);
                         continue;
                     },
                 };
                 if let Err(e) = self.send_email(email) {
-                    log_failed_to_send_email(recipient, e);
+                    self.logger.lock().unwrap().log_failed_to_send_email(recipient, e);
                 } else {
-                    log_email_sent(recipient);
+                    self.logger.lock().unwrap().log_email_sent(recipient);
                 }
             }
+        }
+        self.notification_count += 1;
+    }
+
+    pub fn reached_limit(&self) -> bool {
+        if let Some(limit) = self.config.notification_limit {
+            self.notification_count >= limit
+        } else {
+            false
         }
     }
 

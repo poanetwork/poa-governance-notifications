@@ -26,7 +26,8 @@ impl Cli {
                 [email] --email 'enables email notifications (SMTP configurations must be set in your `.env` file)'
                 [block_time] --block-time [value] 'the average number of seconds it takes to mine a new block'
                 [notification_limit] -n --limit [value] 'shutdown `poagov` after this many notifications have been generated'
-                [verbose_logs] --verbose 'prints the full notification email's body when logging'"
+                [log_emails] --log-emails 'logs each notification's email body; does not require the --email flag to be set'
+                [log_to_file] --log-file 'logs are written to files in the ./logs directory, logs are rotated chronologically across 3 files, each file has a max size of 8MB'"
             ).get_matches();
         Cli(cli_args)
     }
@@ -108,7 +109,11 @@ impl Cli {
         self.0.value_of("notification_limit")
     }
 
-    pub fn verbose_logs(&self) -> bool {
-        self.0.is_present("verbose_logs")
+    pub fn log_emails(&self) -> bool {
+        self.0.is_present("log_emails")
+    }
+
+    pub fn log_to_file(&self) -> bool {
+        self.0.is_present("log_to_file")
     }
 }
