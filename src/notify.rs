@@ -1,199 +1,187 @@
-use chrono::{DateTime, Utc};
-use ethereum_types::Address;
-use lettre::{EmailTransport, SmtpTransport};
-use lettre::smtp::{ClientSecurity, ConnectionReuseParameters, SmtpTransportBuilder};
+use std::sync::{Arc, Mutex};
+
+use lettre::{SendableEmail, Transport};
+use lettre::smtp::{ClientSecurity, ConnectionReuseParameters, SmtpClient, SmtpTransport};
 use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::smtp::client::net::{ClientTlsParameters, DEFAULT_TLS_PROTOCOLS};
-use lettre::smtp::error::Error as BuildSmtpError;
+use lettre::smtp::client::net::ClientTlsParameters;
 use lettre_email::{Email, EmailBuilder};
-use lettre_email::error::Error as BuildEmailError;
 use native_tls::TlsConnector;
 
-use config::{Config, ContractType, Network, Validator};
-use logging::{log_email_failed, log_email_sent, log_notification};
-use rpc::{BallotCreatedLog, BallotType, KeyType, VotingData};
+use config::Config;
+use error::{Error, Result};
+use logger::Logger;
+use response::common::BallotCreatedLog;
+use response::v1::VotingState;
+use response::v2::BallotInfo;
 
-#[derive(Debug)]
-pub enum Notification {
-    Keys(KeysNotification),
-    Threshold(ThresholdNotification),
-    Proxy(ProxyNotification)
+#[derive(Clone, Debug)]
+pub enum Notification<'a> {
+    VotingState {
+        config: &'a Config,
+        log: BallotCreatedLog,
+        voting_state: VotingState,
+    },
+    BallotInfo {
+        config: &'a Config,
+        log: BallotCreatedLog,
+        ballot_info: BallotInfo,
+    },
 }
 
-#[derive(Debug)]
-pub struct KeysNotification {
-    pub network: Network,
-    pub endpoint: String,
-    pub block_number: u64,
-    pub contract_type: ContractType,
-    pub ballot_type: BallotType,
-    pub ballot_id: u64,
-    pub start_time: DateTime<Utc>,
-    pub end_time: DateTime<Utc>,
-    pub memo: String,
-    pub affected_key: Address,
-    pub affected_key_type: KeyType
-}
+impl<'a> Notification<'a> {
+    pub fn from_voting_state(
+        config: &'a Config,
+        log: BallotCreatedLog,
+        voting_state: VotingState,
+    ) -> Self
+    {
+        Notification::VotingState { config, log, voting_state }
+    }
+    
+    pub fn from_ballot_info(
+        config: &'a Config,
+        log: BallotCreatedLog,
+        ballot_info: BallotInfo,
+    ) -> Self
+    {
+        Notification::BallotInfo { config, log, ballot_info }
+    }
 
-#[derive(Debug)]
-pub struct ThresholdNotification {
-    pub network: Network,
-    pub endpoint: String,
-    pub block_number: u64,
-    pub contract_type: ContractType,
-    pub ballot_type: BallotType,
-    pub ballot_id: u64,
-    pub start_time: DateTime<Utc>,
-    pub end_time: DateTime<Utc>,
-    pub memo: String,
-    pub proposed_value: u64
-}
+    pub fn email_text(&self) -> String {
+        format!(
+            "Network: {:?}\n\
+            RPC Endpoint: {}\n\
+            Block Number: {}\n\
+            Contract: {}\n\
+            Version: {:?}\n\
+            Ballot ID: {}\n\
+            {}\n",
+            self.config().network,
+            self.config().endpoint,
+            self.log().block_number,
+            self.contract_name(),
+            self.config().version,
+            self.log().ballot_id,
+            self.email_body(),
+        )
+    }
 
-#[derive(Debug)]
-pub struct ProxyNotification {
-    pub network: Network,
-    pub endpoint: String,
-    pub block_number: u64,
-    pub contract_type: ContractType,
-    pub ballot_type: BallotType,
-    pub ballot_id: u64,
-    pub start_time: DateTime<Utc>,
-    pub end_time: DateTime<Utc>,
-    pub memo: String,
-    pub proposed_value: Address
-}
+    fn config(&self) -> &Config {
+        match self {
+            Notification::VotingState { config, .. } => config,
+            Notification::BallotInfo { config, .. } => config,
+        }
+    }
 
-impl Notification {
-    fn new(config: &Config, log: &BallotCreatedLog, voting_data: &VotingData) -> Self {
-        let network = config.network;
-        let endpoint = config.endpoint.clone();
+    pub fn log(&self) -> &BallotCreatedLog {
+        match self {
+            Notification::VotingState { log, .. } => log,
+            Notification::BallotInfo { log, .. } => log,
+        }
+    }
+    
+    fn contract_name(&self) -> String {
+        match self {
+            Notification::VotingState { voting_state, .. } => voting_state.contract_name(),
+            Notification::BallotInfo { ballot_info, .. } => ballot_info.contract_name(),
+        }
+    }
 
-        let block_number = log.block_number;
-        let ballot_type = log.ballot_type;
-        let ballot_id = log.ballot_id;
-
-        let start_time = voting_data.start_time();
-        let end_time = voting_data.end_time();
-        let memo = voting_data.memo();
-
-        match *voting_data {
-            VotingData::Keys(ref data) => {
-                let contract_type = ContractType::Keys;
-                let affected_key = data.affected_key;
-                let affected_key_type = data.affected_key_type;
-                let notification = KeysNotification {
-                    network, endpoint, block_number,
-                    contract_type, ballot_type, ballot_id,
-                    start_time, end_time, memo,
-                    affected_key, affected_key_type
-                };
-                Notification::Keys(notification)
-            },
-            VotingData::Threshold(ref data) => {
-                let contract_type = ContractType::Threshold;
-                let proposed_value = data.proposed_value;
-                let notification = ThresholdNotification {
-                    network, endpoint, block_number,
-                    contract_type, ballot_type,
-                    ballot_id, start_time, end_time,
-                    memo, proposed_value
-                };
-                Notification::Threshold(notification)
-            },
-            VotingData::Proxy(ref data) => {
-                let contract_type = ContractType::Proxy;
-                let proposed_value = data.proposed_value;
-                let notification = ProxyNotification {
-                    network, endpoint, block_number,
-                    contract_type, ballot_type,
-                    ballot_id, start_time, end_time,
-                    memo, proposed_value
-                };
-                Notification::Proxy(notification)
-            }
+    fn email_body(&self) -> String {
+        match self {
+            Notification::VotingState { voting_state, .. } => voting_state.email_text(),
+            Notification::BallotInfo { ballot_info, .. } => ballot_info.email_text(),
         }
     }
 }
 
 pub struct Notifier<'a> {
     config: &'a Config,
-    mailer: Option<SmtpTransport>
+    emailer: Option<SmtpTransport>,
+    logger: Arc<Mutex<Logger>>,
+    notification_count: usize,
 }
 
 impl<'a> Notifier<'a> {
-    pub fn new(config: &'a Config) -> Result<Self, BuildSmtpError> {        
-        let mut notifier = Notifier { config, mailer: None };
-
-        if config.send_email_notifications {
-            let smtp_addr = (config.smtp_host_domain.as_str(), config.smtp_port);
-            
-            let smtp_tls = {
-                let mut tls_builder = TlsConnector::builder().unwrap();
-                tls_builder.supported_protocols(DEFAULT_TLS_PROTOCOLS).unwrap();
-                let tls = tls_builder.build().unwrap();
-                let tls_params = ClientTlsParameters::new(config.smtp_host_domain.clone(), tls);
-                ClientSecurity::Required(tls_params)
+    pub fn new(config: &'a Config, logger: Arc<Mutex<Logger>>) -> Result<Self> {
+        let emailer = if config.email_notifications {
+            let domain = config.smtp_host_domain.clone().unwrap();
+            let port = config.smtp_port.unwrap();
+            let addr = (domain.as_str(), port);
+            let security = {
+                let tls = TlsConnector::new().map_err(|e| Error::FailedToBuildTls(e))?;
+                let smtp_security_setup = ClientTlsParameters::new(domain.clone(), tls);
+                ClientSecurity::Required(smtp_security_setup)
             };
-
-            let smtp_creds = Credentials::new(
-                config.smtp_username.clone(),
-                config.smtp_password.clone()
+            let creds = Credentials::new(
+                config.smtp_username.clone().unwrap(),
+                config.smtp_password.clone().unwrap(),
             );
-
-            let mailer = SmtpTransportBuilder::new(smtp_addr, smtp_tls)?
+            let smtp = SmtpClient::new(addr, security)
+                .map_err(|e| Error::FailedToResolveSmtpHostDomain(e))?
                 .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
                 .authentication_mechanism(Mechanism::Plain)
-                .credentials(smtp_creds)
-                .build();
+                .credentials(creds)
+                .transport();
+            Some(smtp)
+        } else {
+            None
+        };
+        Ok(Notifier { config, emailer, logger, notification_count: 0 })
+    }
 
-            notifier.mailer = Some(mailer);
+    pub fn notify(&mut self, notif: &Notification) {
+        if self.config.log_emails {
+            self.logger.lock().unwrap().log_notification_email_body(notif);
+        } else {
+            self.logger.lock().unwrap().log_notification(notif);
         }
-
-        Ok(notifier)
-    }
-
-    pub fn build_notification(&self, log: &BallotCreatedLog, voting_data: &VotingData) -> Notification {
-        Notification::new(&self.config, log, voting_data)
-    }
-
-    pub fn notify_validators(&mut self, notif: &Notification) {
-        log_notification(notif);
-        for validator in &self.config.validators {
-            if self.config.send_email_notifications {
-                let email = self.build_email(validator, notif).unwrap();
-                if let Some(ref mut mailer) = self.mailer {
-                    match mailer.send(&email) {
-                        Ok(_) => log_email_sent(&validator.email),
-                        Err(e) => log_email_failed(&validator.email, e)
-                    };
+        if self.config.email_notifications {
+            for recipient in self.config.email_recipients.iter() {
+                let email: SendableEmail = match self.build_email(notif, recipient) {
+                    Ok(email) => email.into(),
+                    Err(e) => {
+                        self.logger.lock().unwrap().log_failed_to_build_email(e);
+                        continue;
+                    },
+                };
+                if let Err(e) = self.send_email(email) {
+                    self.logger.lock().unwrap().log_failed_to_send_email(recipient, e);
+                } else {
+                    self.logger.lock().unwrap().log_email_sent(recipient);
                 }
             }
+        }
+        self.notification_count += 1;
+    }
 
-            if self.config.send_push_notifications {
-                println!("Push Notifications not yet implemented.");
-            }
+    pub fn reached_limit(&self) -> bool {
+        if let Some(limit) = self.config.notification_limit {
+            self.notification_count >= limit
+        } else {
+            false
         }
     }
 
-    fn build_email(&self, validator: &Validator, notif: &Notification) -> Result<Email, BuildEmailError> {
-        let body = match *notif {
-            Notification::Keys(ref inner) => format!("{:#?}\n", inner),
-            Notification::Threshold(ref inner) => format!("{:#?}\n", inner),
-            Notification::Proxy(ref inner) => format!("{:#?}\n", inner)
-        };
+    fn build_email(&self, notif: &Notification, recipient: &str) -> Result<Email> {
+        let outgoing_email = self.config.outgoing_email_addr.clone().unwrap();
         EmailBuilder::new()
-            .to(validator.email.as_str())
-            .from(self.config.outgoing_email.as_str())
+            .to(recipient)
+            .from(outgoing_email.as_str())
             .subject("POA Network Governance Notification")
-            .text(body)
+            .text(notif.email_text())
             .build()
+            .map_err(|e| Error::FailedToBuildEmail(e))
     }
-}
 
-impl<'a> Drop for Notifier<'a> {
-    fn drop(&mut self) {
-        if let Some(ref mut mailer) = self.mailer {
-            mailer.close();
+    fn send_email(&mut self, email: SendableEmail) -> Result<()> {
+        if let Some(ref mut emailer) = self.emailer {
+            match emailer.send(email) {
+                Ok(_response) => Ok(()),
+                Err(e) => Err(Error::FailedToSendEmail(e)),
+            }
+        } else {
+            unreachable!("Attempted to send email without SMTP client setup");
         }
     }
 }

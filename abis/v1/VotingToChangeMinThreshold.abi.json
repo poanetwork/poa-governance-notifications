@@ -14,6 +14,32 @@
     "type": "function"
   },
   {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_startTime",
+        "type": "uint256"
+      },
+      {
+        "name": "_endTime",
+        "type": "uint256"
+      },
+      {
+        "name": "_proposedValue",
+        "type": "uint256"
+      },
+      {
+        "name": "memo",
+        "type": "string"
+      }
+    ],
+    "name": "createBallotToChangeThreshold",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "constant": true,
     "inputs": [
       {
@@ -49,25 +75,6 @@
       {
         "name": "",
         "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_id",
-        "type": "uint256"
-      }
-    ],
-    "name": "getMiningKey",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
       }
     ],
     "payable": false,
@@ -163,25 +170,6 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_id",
-        "type": "uint256"
-      }
-    ],
-    "name": "getAffectedKeyType",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
         "name": "_votingKey",
         "type": "address"
       }
@@ -205,29 +193,6 @@
       {
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_currentKey",
-        "type": "address"
-      },
-      {
-        "name": "_affectedKey",
-        "type": "address"
-      }
-    ],
-    "name": "checkIfMiningExisted",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
       }
     ],
     "payable": false,
@@ -276,56 +241,6 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_ballotType",
-        "type": "uint256"
-      },
-      {
-        "name": "_affectedKey",
-        "type": "address"
-      },
-      {
-        "name": "_affectedKeyType",
-        "type": "uint256"
-      },
-      {
-        "name": "_miningKey",
-        "type": "address"
-      }
-    ],
-    "name": "areBallotParamsValid",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_id",
-        "type": "uint256"
-      }
-    ],
-    "name": "getAffectedKey",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
         "name": "_id",
         "type": "uint256"
       }
@@ -339,44 +254,6 @@
     ],
     "payable": false,
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_startTime",
-        "type": "uint256"
-      },
-      {
-        "name": "_endTime",
-        "type": "uint256"
-      },
-      {
-        "name": "_affectedKey",
-        "type": "address"
-      },
-      {
-        "name": "_affectedKeyType",
-        "type": "uint256"
-      },
-      {
-        "name": "_miningKey",
-        "type": "address"
-      },
-      {
-        "name": "_ballotType",
-        "type": "uint256"
-      },
-      {
-        "name": "memo",
-        "type": "string"
-      }
-    ],
-    "name": "createVotingForKeys",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -545,7 +422,7 @@
         "type": "uint256"
       }
     ],
-    "name": "getBallotType",
+    "name": "getProposedValue",
     "outputs": [
       {
         "name": "",
@@ -641,18 +518,6 @@
         "type": "uint256"
       },
       {
-        "name": "affectedKey",
-        "type": "address"
-      },
-      {
-        "name": "affectedKeyType",
-        "type": "uint256"
-      },
-      {
-        "name": "miningKey",
-        "type": "address"
-      },
-      {
         "name": "totalVoters",
         "type": "uint256"
       },
@@ -669,15 +534,15 @@
         "type": "uint8"
       },
       {
-        "name": "ballotType",
-        "type": "uint256"
-      },
-      {
         "name": "index",
         "type": "uint256"
       },
       {
         "name": "minThresholdOfVoters",
+        "type": "uint256"
+      },
+      {
+        "name": "proposedValue",
         "type": "uint256"
       },
       {
