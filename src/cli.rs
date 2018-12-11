@@ -2,36 +2,37 @@
 
 use clap::{ArgMatches, App};
 
+pub fn parse_cli() -> Cli {
+    let cli_args = App::new("poagov")
+        .version("1.0.0")
+        .about("Monitors a POA Network blockchain for governance events.")
+        .args_from_usage(
+            "[core] --core 'monitor voting contracts deployed to the Core network'
+            [sokol] --sokol 'monitor voting contracts deployed to the Sokol network'
+            [keys] -k --keys 'monitors the blockchain for ballots to change keys'
+            [threshold] -t --threshold 'monitors the blockchain for ballots to change the minimum threshold'
+            [proxy] -p --proxy 'monitors the blockchain for ballots to change the proxy address'
+            [emission] -e --emission 'monitors the blockchain for ballots to manage emission funds'
+            [v1] --v1 'monitors the v1 voting contracts'
+            [v2] --v2 'monitors the v2 voting contracts'
+            [earliest] --earliest 'begin monitoring for governance events starting at the first block in the blockchain'
+            [latest] --latest 'begin monitoring for governance events starting at the last block mined'
+            [start_block] --start [value] 'start monitoring for governance events at this block (inclusive)'
+            [tail] --tail [value] 'start monitoring for governance events for the `n` blocks prior to the last block mined'
+            [email] --email 'enables email notifications (SMTP configurations must be set in your `.env` file)'
+            [block_time] --block-time [value] 'the average number of seconds it takes to mine a new block'
+            [notification_limit] -n --limit [value] 'shutdown `poagov` after this many notifications have been generated'
+            [log_emails] --log-emails 'logs each notification's email body; does not require the --email flag to be set'
+            [log_to_file] --log-file 'logs are written to files in the ./logs directory, logs are rotated chronologically across 3 files, each file has a max size of 8MB'"
+        ).get_matches();
+
+    Cli(cli_args)
+}
+
 #[derive(Debug)]
 pub struct Cli(ArgMatches<'static>);
 
 impl Cli {
-    pub fn parse() -> Self {
-        let cli_args = App::new("poagov")
-            .version("1.0.0")
-            .about("Monitors a POA Network blockchain for governance events.")
-            .args_from_usage(
-                "[core] --core 'monitor voting contracts deployed to the Core network'
-                [sokol] --sokol 'monitor voting contracts deployed to the Sokol network'
-                [keys] -k --keys 'monitors the blockchain for ballots to change keys'
-                [threshold] -t --threshold 'monitors the blockchain for ballots to change the minimum threshold'
-                [proxy] -p --proxy 'monitors the blockchain for ballots to change the proxy address'
-                [emission] -e --emission 'monitors the blockchain for ballots to manage emission funds'
-                [v1] --v1 'monitors the v1 voting contracts'
-                [v2] --v2 'monitors the v2 voting contracts'
-                [earliest] --earliest 'begin monitoring for governance events starting at the first block in the blockchain'
-                [latest] --latest 'begin monitoring for governance events starting at the last block mined'
-                [start_block] --start [value] 'start monitoring for governance events at this block (inclusive)'
-                [tail] --tail [value] 'start monitoring for governance events for the `n` blocks prior to the last block mined'
-                [email] --email 'enables email notifications (SMTP configurations must be set in your `.env` file)'
-                [block_time] --block-time [value] 'the average number of seconds it takes to mine a new block'
-                [notification_limit] -n --limit [value] 'shutdown `poagov` after this many notifications have been generated'
-                [log_emails] --log-emails 'logs each notification's email body; does not require the --email flag to be set'
-                [log_to_file] --log-file 'logs are written to files in the ./logs directory, logs are rotated chronologically across 3 files, each file has a max size of 8MB'"
-            ).get_matches();
-        Cli(cli_args)
-    }
-
     pub fn core(&self) -> bool {
         self.0.is_present("core")
     }

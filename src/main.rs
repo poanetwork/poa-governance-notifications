@@ -32,7 +32,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use blockchain::BlockchainIter;
-use cli::Cli;
+use cli::parse_cli;
 use client::RpcClient;
 use config::{Config, ContractVersion};
 use error::{Error, Result};
@@ -79,12 +79,16 @@ fn set_ctrlc_handler(logger: Arc<Mutex<Logger>>) -> Result<Arc<AtomicBool>> {
 fn main() -> Result<()> {
     load_env_file();
 
-    let cli = Cli::parse();
+    let cli = parse_cli();
     let config = Config::new(&cli)?;
     let logger = Arc::new(Mutex::new(Logger::new(&config)));
+
+    // If email notifications have been enabled but there are no email recipients configured, warn
+    // the user.
     if config.email_notifications && config.email_recipients.is_empty() {
         logger.lock().unwrap().log_no_email_recipients_configured();
     }
+
     let running = set_ctrlc_handler(logger.clone())?;
     let client = RpcClient::new(config.endpoint.clone());
     let mut notifier = Notifier::new(&config, logger.clone())?;
