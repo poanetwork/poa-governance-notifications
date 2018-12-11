@@ -129,20 +129,20 @@ running:
 
     FLAGS:
             --core             monitor voting contracts deployed to the Core network
-            --earliest         begin monitoring for governance events starting at the first block in the blockchain
-            --email            enables email notifications (SMTP configurations must be set in your `.env` file)
-        -e, --emission         monitors the blockchain for ballots to manage emission funds
-        -h, --help             prints help information
-        -k, --keys             monitors the blockchain for ballots to change keys
-            --latest           begin monitoring for governance events starting at the last block mined
-        -p, --proxy            monitors the blockchain for ballots to change the proxy address
             --sokol            monitor voting contracts deployed to the Sokol network
-        -t, --threshold        monitors the blockchain for ballots to change the minimum threshold
             --v1               monitors the v1 voting contracts
             --v2               monitors the v2 voting contracts
-        -V, --version          prints version information
+        -k, --keys             monitors the blockchain for ballots to change keys
+        -p, --proxy            monitors the blockchain for ballots to change the proxy address
+        -t, --threshold        monitors the blockchain for ballots to change the minimum threshold
+        -e, --emission         monitors the blockchain for ballots to manage emission funds
+            --earliest         begin monitoring for governance events starting at the first block in the blockchain
+            --latest           begin monitoring for governance events starting at the last block mined
+            --email            enables email notifications (SMTP configurations must be set in your `.env` file)
             --log-emails       logs each notification's email body; does not require the --email flag to be set
             --log-file         logs are written to files in the ./logs directory, log files are rotated when they reach a size of 4MB
+        -h, --help             prints help information
+        -V, --version          prints version information
 
     OPTIONS:
             --block-time <value>    the average number of seconds it takes to mine a new block
