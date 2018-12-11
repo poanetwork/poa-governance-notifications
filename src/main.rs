@@ -48,7 +48,7 @@ fn load_env_file() {
 
 fn set_ctrlc_handler(logger: Arc<Mutex<Logger>>) -> Result<Arc<AtomicBool>> {
     let running = Arc::new(AtomicBool::new(true));
-    let result = Ok(running.clone()); 
+    let result = Ok(running.clone());
     ctrlc::set_handler(move || {
         logger.lock().unwrap().log_ctrlc();
         running.store(false, Ordering::SeqCst);
@@ -58,7 +58,7 @@ fn set_ctrlc_handler(logger: Arc<Mutex<Logger>>) -> Result<Arc<AtomicBool>> {
 
 fn main() -> Result<()> {
     load_env_file();
-    
+
     let cli = Cli::parse();
     let config = Config::new(&cli)?;
     let logger = Arc::new(Mutex::new(Logger::new(&config)));
@@ -79,7 +79,7 @@ fn main() -> Result<()> {
                 start_block,
                 stop_block,
             )?;
-            for log in ballot_created_logs.into_iter() { 
+            for log in ballot_created_logs.into_iter() {
                 let notification = if contract.version == ContractVersion::V1 {
                     let voting_state = client.get_voting_state(contract, log.ballot_id)?;
                     Notification::from_voting_state(&config, log, voting_state)

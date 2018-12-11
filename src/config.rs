@@ -59,7 +59,7 @@ impl ContractType {
         }
     }
 
-    fn abi_file_name(&self) -> &str {        
+    fn abi_file_name(&self) -> &str {
         match self {
             ContractType::Keys => "VotingToChangeKeys.abi.json",
             ContractType::Threshold => "VotingToChangeMinThreshold.abi.json",
@@ -112,7 +112,7 @@ impl PoaContract {
         if contract_type == ContractType::Emission && version == ContractVersion::V1 {
             return Err(Error::EmissionFundsV1ContractDoesNotExist);
         }
-        
+
         let addr_env_var = format!(
             "{}_CONTRACT_ADDRESS_{}_{:?}",
             contract_type.uppercase(),
@@ -134,7 +134,7 @@ impl PoaContract {
             version.lowercase(),
             contract_type.abi_file_name(),
         );
- 
+
         let abi_file = File::open(&abi_path)
             .map_err(|_| Error::MissingAbiFile(abi_path.clone()))?;
 
@@ -195,7 +195,7 @@ impl Config {
         let endpoint_env_var = format!("{}_RPC_ENDPOINT", network.uppercase());
         let endpoint = env::var(&endpoint_env_var)
             .map_err(|_| Error::MissingEnvVar(endpoint_env_var))?;
-        
+
         let version = if cli.v1() == cli.v2(){
             return Err(Error::MustSpecifyOneCliArgument("`--v1` or `--v2`".into()));
         } else if cli.v1(){
@@ -203,7 +203,7 @@ impl Config {
         } else {
             ContractVersion::V2
         };
-       
+
         let mut contracts = vec![];
         if cli.keys() {
             let keys = PoaContract::read(
@@ -243,7 +243,7 @@ impl Config {
             ));
         }
 
-        let start_block = if cli.multiple_start_blocks_specified() { 
+        let start_block = if cli.multiple_start_blocks_specified() {
             return Err(Error::MustSpecifyOneCliArgument(
                 "`--earliest` or `--latest` or `--start-block` or `--tail`".into()
             ));
@@ -268,7 +268,7 @@ impl Config {
         };
 
         let email_notifications = cli.email();
-        
+
         let email_recipients: Vec<String> = env::var("EMAIL_RECIPIENTS")
             .map_err(|_| Error::MissingEnvVar("EMAIL_RECIPIENTS".into()))?
             .split(',')
@@ -363,7 +363,7 @@ mod tests {
     use super::super::tests::setup;
     use super::{ContractType, ContractVersion, PoaContract, Network};
 
-    const CONTRACT_TYPES: [ContractType; 4] = [ 
+    const CONTRACT_TYPES: [ContractType; 4] = [
             ContractType::Keys,
             ContractType::Threshold,
             ContractType::Proxy,

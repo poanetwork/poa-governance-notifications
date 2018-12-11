@@ -64,7 +64,7 @@ impl<'a> BlockchainIter<'a> {
 impl<'a> Iterator for BlockchainIter<'a> {
     type Item = Result<(BlockNumber, BlockNumber)>;
 
-    fn next(&mut self) -> Option<Self::Item> {        
+    fn next(&mut self) -> Option<Self::Item> {
         if self.on_first_iteration {
             self.on_first_iteration = false;
         } else {

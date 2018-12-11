@@ -134,8 +134,8 @@ impl RpcClient {
             from: None,
             gas: None,
             gas_price: None,
-            value: None, 
-        };        
+            value: None,
+        };
         let rpc_method_params = vec![
             json::to_value(function_call_request).unwrap(),
             json::to_value(BlockNumber::Latest).unwrap(),
@@ -183,8 +183,8 @@ impl RpcClient {
             from: None,
             gas: None,
             gas_price: None,
-            value: None, 
-        }; 
+            value: None,
+        };
         let rpc_method_params = vec![
             json::to_value(function_call_request).unwrap(),
             json::to_value(BlockNumber::Latest).unwrap(),

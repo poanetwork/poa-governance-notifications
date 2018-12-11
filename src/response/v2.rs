@@ -37,7 +37,7 @@ impl From<EmissionBallotInfo> for BallotInfo {
 }
 
 impl BallotInfo {
-    pub fn contract_name(&self) -> String { 
+    pub fn contract_name(&self) -> String {
         match self {
             BallotInfo::Keys(_) => "VotingToChangeKeys.sol".into(),
             BallotInfo::Threshold(_) => "VotingToChangeMinThreshold.sol".into(),
@@ -46,7 +46,7 @@ impl BallotInfo {
         }
     }
 
-    pub fn email_text(&self) -> String {    
+    pub fn email_text(&self) -> String {
         match self {
             BallotInfo::Keys(info) => info.email_text(),
             BallotInfo::Threshold(info) => info.email_text(),

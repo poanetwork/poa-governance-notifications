@@ -62,14 +62,14 @@ impl From<ProxyVotingState> for VotingState {
 }
 
 impl VotingState {
-    pub fn contract_name(&self) -> String {        
+    pub fn contract_name(&self) -> String {
         match self {
             VotingState::Keys(_) => "VotingToChangeKeys.sol".into(),
             VotingState::Threshold(_) => "VotingToChangeMinThreshold.sol".into(),
             VotingState::Proxy(_) => "VotingToChangeProxyAddress.sol".into(),
         }
     }
-    
+
     pub fn email_text(&self) -> String {
         match self {
             VotingState::Keys(state) => state.email_text(),

@@ -20,7 +20,7 @@ const MAX_LOG_FILE_SIZE_MB: usize = 4;
 const MAX_LOG_FILE_SIZE_BYTES: usize = MAX_LOG_FILE_SIZE_MB * 1024 * 1024;
 // We dont want to check the log file's size after every log that is written, this constant states
 // "after this many logs have been written, check the log file's size". This value assumes an
-// average log is around 100 ASCII characters (bytes) long. 
+// average log is around 100 ASCII characters (bytes) long.
 const INITIAL_CHECK_FILE_SIZE_AT: usize = MAX_LOG_FILE_SIZE_BYTES / 100;
 
 fn create_logs_dir() {
@@ -84,7 +84,7 @@ impl LogFile {
     fn now() -> Self {
         LogFile(Utc::now())
     }
-    
+
     fn from_file_name(file_name: &str) -> Result<Self, ()> {
         if let Ok(dt) = Utc.datetime_from_str(file_name, FILE_NAME_DATE_FORMAT) {
             Ok(LogFile(dt))
@@ -140,7 +140,7 @@ impl Logger {
             check_file_size_at: INITIAL_CHECK_FILE_SIZE_AT,
         }
     }
-    
+
     fn logging_to_file(&self) -> bool {
         !self.log_files.is_empty()
     }
@@ -152,7 +152,7 @@ impl Logger {
                 let file_size = get_file_size_in_bytes(&path);
                 if file_size >= MAX_LOG_FILE_SIZE_BYTES {
                     return true;
-                } 
+                }
                 let avg_bytes_per_log = file_size / self.log_count;
                 let remaining_bytes = MAX_LOG_FILE_SIZE_BYTES - file_size;
                 let remaining_logs = remaining_bytes / avg_bytes_per_log;
@@ -180,7 +180,7 @@ impl Logger {
         info!(&self.logger, "starting poagov...");
         self.increment_log_count();
     }
-    
+
     pub fn log_ctrlc(&mut self) {
         warn!(&self.logger, "recieved ctrl-c signal, gracefully shutting down...");
         self.increment_log_count();
@@ -195,7 +195,7 @@ impl Logger {
         info!(&self.logger, "governance notification\n{}", notif.email_text());
         self.increment_log_count();
     }
-    
+
     pub fn log_notification(&mut self, notif: &Notification) {
         let ballot_created_log = notif.log();
         info!(
@@ -207,12 +207,12 @@ impl Logger {
         );
         self.increment_log_count();
     }
-    
+
     pub fn log_failed_to_build_email(&mut self, e: Error) {
         warn!(&self.logger, "failed to build email"; "error" => format!("{:?}", e));
         self.increment_log_count();
     }
-    
+
     pub fn log_failed_to_send_email(&mut self, recipient: &str, e: Error) {
         warn!(
             &self.logger,
@@ -227,7 +227,7 @@ impl Logger {
         info!(&self.logger, "email sent"; "to" => recipient);
         self.increment_log_count();
     }
-    
+
     pub fn log_reached_notification_limit(&mut self, notification_limit: usize) {
         warn!(
             &self.logger,

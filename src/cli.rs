@@ -39,7 +39,7 @@ impl Cli {
     pub fn sokol(&self) -> bool {
         self.0.is_present("sokol")
     }
-    
+
     pub fn keys(&self) -> bool {
         self.0.is_present("keys")
     }
@@ -47,7 +47,7 @@ impl Cli {
     pub fn threshold(&self) -> bool {
         self.0.is_present("threshold")
     }
- 
+
     pub fn proxy(&self) -> bool {
         self.0.is_present("proxy")
     }
@@ -63,7 +63,7 @@ impl Cli {
     pub fn v2(&self) -> bool {
         self.0.is_present("v2")
     }
-    
+
     pub fn earliest(&self) -> bool {
         self.0.is_present("earliest")
     }
