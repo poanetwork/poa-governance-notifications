@@ -1,3 +1,6 @@
+// Don't throw a compilation warning for the to be deprecated: 'ethereum_types::H256::low_u64'.
+#![allow(deprecated)]
+
 use chrono::{DateTime, NaiveDateTime, Utc};
 use ethabi;
 use web3::types::{Address, H256, U256};
@@ -111,7 +114,7 @@ impl BallotCreatedLog {
     pub fn from_ethabi_log(log: ethabi::Log, block_number: U256) -> Result<Self> {
         let mut ballot_id: Option<U256> = None;
         let mut ballot_type: Option<BallotType> = None;
-        let mut creator: Option<Address> = None; 
+        let mut creator: Option<Address> = None;
         for ethabi::LogParam { name, value } in log.params {
             match name.as_ref() {
                 "id" => ballot_id = value.to_uint(),
@@ -119,7 +122,7 @@ impl BallotCreatedLog {
                 "creator" => creator = value.to_address(),
                 name => unreachable!("Found unknown `BallotCreated` event log field: {}", name),
             };
-        } 
+        }
         let ballot_id = match ballot_id {
             Some(id) => id,
             None => return Err(Error::FailedToParseBallotCreatedLog("missing `id`".into())),
