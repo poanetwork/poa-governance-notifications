@@ -181,7 +181,7 @@ impl Logger {
         self.increment_log_count();
     }
 
-    pub fn log_ctrlc(&mut self) {
+    pub fn log_ctrlc_pressed(&mut self) {
         warn!(&self.logger, "recieved ctrl-c signal, gracefully shutting down...");
         self.increment_log_count();
     }

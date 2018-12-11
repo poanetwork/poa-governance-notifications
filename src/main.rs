@@ -7,6 +7,8 @@ extern crate ethereum_types;
 extern crate failure;
 extern crate hex;
 extern crate jsonrpc_core;
+#[macro_use]
+extern crate lazy_static;
 extern crate lettre;
 extern crate lettre_email;
 extern crate native_tls;
@@ -37,23 +39,41 @@ use error::{Error, Result};
 use logger::Logger;
 use notify::{Notification, Notifier};
 
+lazy_static! {
+    // Tracks whether or not the .env file has been loaded.
+    static ref LOADED_ENV_FILE: AtomicBool = AtomicBool::new(false);
+}
+
+/// Attempts to load the .env file one time at the start of the main process or at the start of the
+/// tests. Panics if the .env file cannot be found or parsed.
 fn load_env_file() {
-    if let Err(e) = dotenv::dotenv() {
-        match e {
-            dotenv::Error::Io(_) => panic!("could not find .env file"),
-            _ => panic!("coule not parse .env file"),
+    if !LOADED_ENV_FILE.load(Ordering::Relaxed) {
+        match dotenv::dotenv() {
+            Ok(_) => LOADED_ENV_FILE.store(true, Ordering::Relaxed),
+            Err(dotenv::Error::Io(_)) => panic!("could not find .env file"),
+            _ =>  panic!("could not parse .env file"),
         };
     }
 }
 
+/// Sets up ctrl-c to change the value of `poagov_is_running` from `true` to `false`. When
+/// `poagov_is_running` changes to `false`, the process of gracefully shutting down begins. The
+/// `AtomicBool` returned by this function is used to indicate whether or not the `poagov` binary
+/// should continue running.
 fn set_ctrlc_handler(logger: Arc<Mutex<Logger>>) -> Result<Arc<AtomicBool>> {
-    let running = Arc::new(AtomicBool::new(true));
-    let result = Ok(running.clone());
-    ctrlc::set_handler(move || {
-        logger.lock().unwrap().log_ctrlc();
-        running.store(false, Ordering::SeqCst);
-    }).map_err(|e| Error::CtrlcError(e))?;
-    result
+    let poagov_is_running = Arc::new(AtomicBool::new(true));
+    let setup_res = {
+        let poagov_is_running = poagov_is_running.clone();
+        ctrlc::set_handler(move || {
+            logger.lock().unwrap().log_ctrlc_pressed();
+            poagov_is_running.store(false, Ordering::SeqCst);
+        })
+    };
+    if let Err(e) = setup_res {
+        Err(Error::CtrlcSetupError(e))
+    } else {
+        Ok(poagov_is_running)
+    }
 }
 
 fn main() -> Result<()> {
@@ -111,14 +131,8 @@ fn main() -> Result<()> {
 pub mod tests {
     use super::load_env_file;
 
-    static mut LOADED_ENV_FILE: bool = false;
-
+    /// Loads the .env file once at the start of the tests.
     pub fn setup() {
-        unsafe {
-            if !LOADED_ENV_FILE {
-                load_env_file();
-                LOADED_ENV_FILE = true;
-            }
-        }
+        load_env_file();
     }
 }

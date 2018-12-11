@@ -10,7 +10,7 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
-    CtrlcError(ctrlc::Error),
+    CtrlcSetupError(ctrlc::Error),
     EmissionFundsV1ContractDoesNotExist,
     FailedToBuildEmail(failure::Error),
     FailedToBuildRequest(reqwest::Error),

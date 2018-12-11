@@ -15,6 +15,7 @@ ethereum-types = "0.4.0"
 failure = "0.1.2"
 hex = "0.3.2"
 jsonrpc-core = "8.0.1"
+lazy_static = "1.2.0"
 # TODO: after `lettre` and `lettre_email` v0.9.x have been published to crates.io, remove these
 # GitHub dependencies.
 lettre = { git = "https://github.com/lettre/lettre.git" }
