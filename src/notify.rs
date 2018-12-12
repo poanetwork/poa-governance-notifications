@@ -1,18 +1,18 @@
 use std::sync::{Arc, Mutex};
 
-use lettre::{SendableEmail, Transport};
+use lettre::{SendableEmail, Transport as _Transport};
 use lettre::smtp::{ClientSecurity, ConnectionReuseParameters, SmtpClient, SmtpTransport};
 use lettre::smtp::authentication::{Credentials, Mechanism};
 use lettre::smtp::client::net::ClientTlsParameters;
 use lettre_email::{Email, EmailBuilder};
 use native_tls::TlsConnector;
 
-use config::Config;
-use error::{Error, Result};
-use logger::Logger;
-use response::common::BallotCreatedLog;
-use response::v1::VotingState;
-use response::v2::BallotInfo;
+use crate::config::Config;
+use crate::error::{Error, Result};
+use crate::logger::Logger;
+use crate::response::common::BallotCreatedLog;
+use crate::response::v1::VotingState;
+use crate::response::v2::BallotInfo;
 
 #[derive(Clone, Debug)]
 pub enum Notification<'a> {
@@ -37,7 +37,7 @@ impl<'a> Notification<'a> {
     {
         Notification::VotingState { config, log, voting_state }
     }
-    
+
     pub fn from_ballot_info(
         config: &'a Config,
         log: BallotCreatedLog,
@@ -79,7 +79,7 @@ impl<'a> Notification<'a> {
             Notification::BallotInfo { log, .. } => log,
         }
     }
-    
+
     fn contract_name(&self) -> String {
         match self {
             Notification::VotingState { voting_state, .. } => voting_state.contract_name(),

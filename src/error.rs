@@ -1,11 +1,3 @@
-use ctrlc;
-use jsonrpc_core;
-use ethabi;
-use failure;
-use lettre;
-use native_tls;
-use reqwest;
-
 pub type Result<T> = ::std::result::Result<T, Error>;
 
 #[derive(Debug)]

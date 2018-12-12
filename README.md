@@ -49,7 +49,7 @@ To build the `poagov` CLI tool, run the following:
     $ cd poa-governance-notifications
     $ cargo build --release
 
-`poagov` can be built with Rust 1.29.1-stable or later and requires `libssl`;
+`poagov` can be built with Rust 1.31.0-stable or later and requires `libssl`;
 see the following "Requires libssl" section for more information.
 
 ### Testing

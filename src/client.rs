@@ -1,17 +1,13 @@
 use std::u64;
 
-use ethabi;
-use hex;
 use jsonrpc_core as json_rpc;
-use reqwest;
 use serde_json as json;
-use web3;
 use web3::types::{Address, BlockNumber, Filter, FilterBuilder, U256};
 
-use config::{ContractType, PoaContract};
-use error::{Error, Result};
-use response::{v1, v2};
-use response::common::BallotCreatedLog;
+use crate::config::{ContractType, PoaContract};
+use crate::error::{Error, Result};
+use crate::response::{v1, v2};
+use crate::response::common::BallotCreatedLog;
 
 #[derive(Debug)]
 pub enum RpcMethod {
@@ -212,9 +208,9 @@ mod tests {
 
     use web3::types::BlockNumber;
 
-    use super::super::tests::setup;
+    use crate::tests::setup;
+    use crate::config::{ContractType, ContractVersion, Network, PoaContract};
     use super::RpcClient;
-    use config::{ContractType, ContractVersion, Network, PoaContract};
 
     #[test]
     fn test_get_last_mined_block() {

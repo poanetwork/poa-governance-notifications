@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use ethabi;
 use web3::types::{Address, U256};
 
-use response::common::{u256_to_datetime, BallotType, KeyType};
+use crate::response::common::{u256_to_datetime, BallotType, KeyType};
 
 /// Describes the current state of a given ballot.
 ///

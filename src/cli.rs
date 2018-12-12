@@ -1,3 +1,4 @@
+// Some of `Cli`'s methods are not currently being used.
 #![allow(dead_code)]
 
 use clap::{ArgMatches, App};

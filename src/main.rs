@@ -1,24 +1,3 @@
-extern crate chrono;
-extern crate clap;
-extern crate ctrlc;
-extern crate dotenv;
-extern crate ethabi;
-extern crate ethereum_types;
-extern crate failure;
-extern crate hex;
-extern crate jsonrpc_core;
-#[macro_use]
-extern crate lazy_static;
-extern crate lettre;
-extern crate lettre_email;
-extern crate native_tls;
-extern crate reqwest;
-extern crate serde_json;
-#[macro_use]
-extern crate slog;
-extern crate slog_term;
-extern crate web3;
-
 mod blockchain;
 mod cli;
 mod client;
@@ -31,13 +10,15 @@ mod response;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use blockchain::BlockchainIter;
-use cli::parse_cli;
-use client::RpcClient;
-use config::{Config, ContractVersion};
-use error::{Error, Result};
-use logger::Logger;
-use notify::{Notification, Notifier};
+use lazy_static::lazy_static;
+
+use crate::blockchain::BlockchainIter;
+use crate::cli::parse_cli;
+use crate::client::RpcClient;
+use crate::config::{Config, ContractVersion};
+use crate::error::{Error, Result};
+use crate::logger::Logger;
+use crate::notify::{Notification, Notifier};
 
 lazy_static! {
     // Tracks whether or not the environment variables have been loaded from the .env file.
