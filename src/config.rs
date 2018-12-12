@@ -1,13 +1,13 @@
 use std::env;
 use std::fmt::{self, Debug, Formatter};
 use std::fs::File;
-use std::str::FromStr;
+use std::str::FromStr as _FromStr;
 
 use ethabi::{Address, Contract, Event, Function};
 
-use cli::Cli;
-use error::{Error, Result};
-use response::common::BallotType;
+use crate::cli::Cli;
+use crate::error::{Error, Result};
+use crate::response::common::BallotType;
 
 const DEFAULT_BLOCK_TIME_SECS: u64 = 30;
 

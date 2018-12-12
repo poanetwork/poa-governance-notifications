@@ -5,7 +5,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use ethabi;
 use web3::types::{Address, H256, U256};
 
-use error::{Error, Result};
+use crate::error::{Error, Result};
 
 /// Converts a `U256` timestamp to a UTC `DateTime`.
 pub fn u256_to_datetime(uint: U256) -> DateTime<Utc> {

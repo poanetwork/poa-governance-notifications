@@ -1,23 +1,26 @@
-use std::fs::{self, create_dir, File, read_dir, remove_file};
+use std::fs::{self, create_dir, read_dir, remove_file, File};
 use std::io::stderr;
 use std::path::Path;
 
-use chrono::{DateTime, TimeZone, Utc};
-use slog::{self, Drain};
+use chrono::{DateTime, TimeZone as _TimeZone, Utc};
+use slog::{info, o, warn, Drain as _Drain};
 use slog_term::{FullFormat, PlainSyncDecorator};
 use web3::types::BlockNumber;
 
-use config::Config;
-use error::Error;
-use notify::Notification;
+use crate::config::Config;
+use crate::error::Error;
+use crate::notify::Notification;
 
 // The date format used to name log files; e.g. "Oct-08-2018-14:09:00".
 const FILE_NAME_DATE_FORMAT: &str = "%b-%d-%Y-%H:%M:%S";
+
 // The directory (relative to Cargo.toml) to store logs.
 const LOGS_DIR: &str = "logs";
+
 const MAX_NUMBER_OF_LOG_FILES: usize = 3;
 const MAX_LOG_FILE_SIZE_MB: usize = 4;
 const MAX_LOG_FILE_SIZE_BYTES: usize = MAX_LOG_FILE_SIZE_MB * 1024 * 1024;
+
 // We dont want to check the log file's size after every log that is written, this constant states
 // "after this many logs have been written, check the log file's size". This value assumes an
 // average log is around 100 ASCII characters (bytes) long.

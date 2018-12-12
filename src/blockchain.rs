@@ -5,9 +5,9 @@ use std::time::Duration;
 
 use web3::types::BlockNumber;
 
-use client::RpcClient;
-use config::{Config, StartBlock};
-use error::{Error, Result};
+use crate::client::RpcClient;
+use crate::config::{Config, StartBlock};
+use crate::error::{Error, Result};
 
 fn sleep_or_ctrlc(n_secs: u64, running: Arc<AtomicBool>) -> Option<()> {
     let done_sleeping = Arc::new(AtomicBool::new(false));

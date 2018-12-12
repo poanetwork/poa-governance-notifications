@@ -2,7 +2,7 @@
 name = "poagov"
 version = "1.0.0"
 authors = ["DrPeterVanNostrand <jnz@riseup.net>"]
-# edition = "2018"
+edition = "2018"
 readme = "README.md"
 license = "GPL-3.0"
 repository = "https://github.com/poanetwork/poa-governance-notifications"
