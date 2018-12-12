@@ -161,7 +161,7 @@ pub struct ThresholdBallotInfo {
     pub creator: Address,
     pub memo: String,
     pub can_be_finalized_now: bool,
-    // pub already_voted: bool,
+    pub already_voted: bool,
 }
 
 impl From<Vec<ethabi::Token>> for ThresholdBallotInfo {
@@ -175,13 +175,13 @@ impl From<Vec<ethabi::Token>> for ThresholdBallotInfo {
             u256_to_datetime(uint)
         };
         let total_voters = tokens[2].clone().to_uint().unwrap();
-        let progress = tokens[3].clone().to_uint().unwrap();
+        let progress = tokens[3].clone().to_int().unwrap();
         let is_finalized = tokens[4].clone().to_bool().unwrap();
         let proposed_value = tokens[5].clone().to_uint().unwrap();
         let creator = tokens[6].clone().to_address().unwrap();
         let memo = tokens[7].clone().to_string().unwrap();
         let can_be_finalized_now = tokens[8].clone().to_bool().unwrap();
-        // let already_voted = tokens[9].clone().to_bool().unwrap();
+        let already_voted = tokens[9].clone().to_bool().unwrap();
         ThresholdBallotInfo {
             start_time,
             end_time,
@@ -192,7 +192,7 @@ impl From<Vec<ethabi::Token>> for ThresholdBallotInfo {
             creator,
             memo,
             can_be_finalized_now,
-            // already_voted,
+            already_voted,
         }
     }
 }
