@@ -2,7 +2,6 @@
 #![allow(deprecated)]
 
 use chrono::{DateTime, NaiveDateTime, Utc};
-use ethabi;
 use web3::types::{Address, H256, U256};
 
 use crate::error::{Error, Result};
@@ -129,12 +128,25 @@ impl BallotCreatedLog {
         };
         let ballot_type = match ballot_type {
             Some(ballot_type) => ballot_type,
-            None => return Err(Error::FailedToParseBallotCreatedLog("missing `ballot_type`".into())),
+            None => {
+                return Err(Error::FailedToParseBallotCreatedLog(
+                    "missing `ballot_type`".to_string(),
+                ))
+            }
         };
         let creator = match creator {
             Some(creator) => creator,
-            None => return Err(Error::FailedToParseBallotCreatedLog("missing `creator`".into())),
+            None => {
+                return Err(Error::FailedToParseBallotCreatedLog(
+                    "missing `creator`".to_string(),
+                ))
+            }
         };
-        Ok(BallotCreatedLog { ballot_id, ballot_type, creator, block_number })
+        Ok(BallotCreatedLog {
+            ballot_id,
+            ballot_type,
+            creator,
+            block_number,
+        })
     }
 }

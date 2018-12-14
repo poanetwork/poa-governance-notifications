@@ -16,8 +16,9 @@ fn create_env_file_if_dne() {
         if !sample_env_path.exists() {
             panic!("neither the `.env` nor the `sample.env` files exist, one of these files must exist to build the `poagov`");
         }
-        fs::copy(sample_env_path, env_path)
-            .unwrap_or_else(|e| panic!("failed to create the `.env` file from `sample.env`: {:?}", e));
+        if let Err(e) = fs::copy(sample_env_path, env_path) {
+            panic!("failed to create the `.env` file from `sample.env`: {:?}", e);
+        }
     }
 }
 

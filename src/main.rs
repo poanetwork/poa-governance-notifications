@@ -33,7 +33,7 @@ fn load_env_file() {
         match dotenv::dotenv() {
             Ok(_) => LOADED_ENV_FILE.store(true, Ordering::Relaxed),
             Err(dotenv::Error::Io(_)) => panic!("could not find .env file"),
-            _ =>  panic!("could not parse .env file"),
+            _ => panic!("could not parse .env file"),
         };
     }
 }
@@ -89,13 +89,16 @@ fn main() -> Result<()> {
                 start_block,
                 stop_block,
             )?;
-            for log in ballot_created_logs.into_iter() {
-                let notification = if contract.version == ContractVersion::V1 {
-                    let voting_state = client.get_voting_state(contract, log.ballot_id)?;
-                    Notification::from_voting_state(&config, log, voting_state)
-                } else {
-                    let ballot_info = client.get_ballot_info(contract, log.ballot_id)?;
-                    Notification::from_ballot_info(&config, log, ballot_info)
+            for log in ballot_created_logs {
+                let notification = match contract.version {
+                    ContractVersion::V1 => {
+                        let voting_state = client.get_voting_state(contract, log.ballot_id)?;
+                        Notification::from_voting_state(&config, log, voting_state)
+                    }
+                    ContractVersion::V2 => {
+                        let ballot_info = client.get_ballot_info(contract, log.ballot_id)?;
+                        Notification::from_ballot_info(&config, log, ballot_info)
+                    }
                 };
                 notifications.push(notification);
             }
@@ -116,7 +119,10 @@ fn main() -> Result<()> {
             }
         }
 
-        logger.lock().unwrap().log_finished_block_window(start_block, stop_block);
+        logger
+            .lock()
+            .unwrap()
+            .log_finished_block_window(start_block, stop_block);
     }
 
     Ok(())

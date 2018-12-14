@@ -6,8 +6,9 @@ use web3::types::{Address, BlockNumber, Filter, FilterBuilder, U256};
 
 use crate::config::{ContractType, PoaContract};
 use crate::error::{Error, Result};
-use crate::response::{v1, v2};
 use crate::response::common::BallotCreatedLog;
+use crate::response::v1;
+use crate::response::v2;
 
 #[derive(Debug)]
 pub enum RpcMethod {
@@ -43,8 +44,7 @@ impl RpcClient {
         &self,
         method: RpcMethod,
         params: Vec<json::Value>,
-    ) -> Result<reqwest::Request>
-    {
+    ) -> Result<reqwest::Request> {
         let method_call = json_rpc::types::request::MethodCall {
             jsonrpc: Some(json_rpc::types::version::Version::V2),
             method: method.into(),
@@ -60,7 +60,8 @@ impl RpcClient {
     }
 
     fn send(&self, req: reqwest::Request) -> Result<json::Value> {
-        let resp: json_rpc::types::response::Response = self.client
+        let resp: json_rpc::types::response::Response = self
+            .client
             .execute(req)
             .map_err(|e| Error::RequestFailed(e))?
             .json()
@@ -68,7 +69,9 @@ impl RpcClient {
         if let json_rpc::types::response::Response::Single(resp_status) = resp {
             match resp_status {
                 json_rpc::types::response::Output::Success(resp) => return Ok(resp.result),
-                json_rpc::types::response::Output::Failure(e) => return Err(Error::JsonRpcResponseFailure(e)),
+                json_rpc::types::response::Output::Failure(e) => {
+                    return Err(Error::JsonRpcResponseFailure(e))
+                }
             };
         }
         unreachable!("Recieved multiple responses for single request");
@@ -97,8 +100,7 @@ impl RpcClient {
         contract: &PoaContract,
         start: BlockNumber,
         stop: BlockNumber,
-    ) -> Result<Vec<BallotCreatedLog>>
-    {
+    ) -> Result<Vec<BallotCreatedLog>> {
         let event = contract.event("BallotCreated");
         let event_sig = event.signature();
         let filter = FilterBuilder::default()
@@ -110,9 +112,15 @@ impl RpcClient {
         self.get_logs(filter)?
             .into_iter()
             .map(|web3_log| {
-                let web3::types::Log {topics, data, block_number, .. } = web3_log;
+                let web3::types::Log {
+                    topics,
+                    data,
+                    block_number,
+                    ..
+                } = web3_log;
                 let raw_log = ethabi::RawLog::from((topics, data.0));
-                let ethabi_log = event.parse_log(raw_log)
+                let ethabi_log = event
+                    .parse_log(raw_log)
                     .map_err(|e| Error::FailedToParseRawLogToLog(e))?;
                 BallotCreatedLog::from_ethabi_log(ethabi_log, block_number.unwrap())
             })
@@ -120,7 +128,11 @@ impl RpcClient {
     }
 
     /// V1
-    pub fn get_voting_state(&self, contract: &PoaContract, ballot_id: U256) -> Result<v1::VotingState> {
+    pub fn get_voting_state(
+        &self,
+        contract: &PoaContract,
+        ballot_id: U256,
+    ) -> Result<v1::VotingState> {
         let function = contract.function("votingState");
         let tokens = vec![ethabi::Token::Uint(ballot_id)];
         let encoded_input = function.encode_input(&tokens).unwrap();
@@ -156,8 +168,12 @@ impl RpcClient {
     // TODO: When V2 contracts have been published and ballots have begun, test that calling
     // `.getBallotInfo()` with `Address::zero()` for the `votingKey` works (we don't care if
     // `votingKey` has voted yet).
-    pub fn get_ballot_info(&self, contract: &PoaContract, ballot_id: U256) -> Result<v2::BallotInfo> {
-    // pub fn get_ballot_info(&self, contract: &PoaContract, ballot_id: U256, voting_key: Option<Address>) -> Result<v2::BallotInfo> {
+    pub fn get_ballot_info(
+        &self,
+        contract: &PoaContract,
+        ballot_id: U256,
+    ) -> Result<v2::BallotInfo> {
+        // pub fn get_ballot_info(&self, contract: &PoaContract, ballot_id: U256, voting_key: Option<Address>) -> Result<v2::BallotInfo> {
         let function = contract.function("getBallotInfo");
         /*
         let mut tokens = vec![ethabi::Token::Uint(ballot_id)];
@@ -208,15 +224,16 @@ mod tests {
 
     use web3::types::BlockNumber;
 
-    use crate::tests::setup;
-    use crate::config::{ContractType, ContractVersion, Network, PoaContract};
     use super::RpcClient;
+    use crate::config::{ContractType, ContractVersion, Network, PoaContract};
+    use crate::tests::setup;
 
     #[test]
     fn test_get_last_mined_block() {
         setup();
 
-        let sokol_url = env::var("SOKOL_RPC_ENDPOINT").expect("Missing env-var: `SOKOL_RPC_ENDPOINT`");
+        let sokol_url =
+            env::var("SOKOL_RPC_ENDPOINT").expect("Missing env-var: `SOKOL_RPC_ENDPOINT`");
         let client = RpcClient::new(sokol_url);
         let res = client.get_last_mined_block_number();
         println!("\nsokol last mined block number => {:?}", res);
@@ -232,18 +249,13 @@ mod tests {
     #[test]
     fn test_get_ballot_created_logs() {
         setup();
-        let contract = PoaContract::read(
-            ContractType::Keys,
-            Network::Sokol,
-            ContractVersion::V1,
-        ).unwrap_or_else(|e| panic!("Failed to load contract: {:?}", e));
-        let endpoint = env::var("SOKOL_RPC_ENDPOINT").expect("Missing env-var: `SOKOL_RPC_ENDPOINT`");
+        let contract = PoaContract::read(ContractType::Keys, Network::Sokol, ContractVersion::V1)
+            .unwrap_or_else(|e| panic!("Failed to load contract: {:?}", e));
+        let endpoint =
+            env::var("SOKOL_RPC_ENDPOINT").expect("Missing env-var: `SOKOL_RPC_ENDPOINT`");
         let client = RpcClient::new(endpoint);
-        let res = client.get_ballot_created_logs(
-            &contract,
-            BlockNumber::Earliest,
-            BlockNumber::Latest,
-        );
+        let res =
+            client.get_ballot_created_logs(&contract, BlockNumber::Earliest, BlockNumber::Latest);
         println!("{:#?}", res);
         assert!(res.is_ok());
     }
@@ -273,12 +285,10 @@ mod tests {
     #[test]
     fn test_get_voting_state() {
         setup();
-        let contract = PoaContract::read(
-            ContractType::Threshold,
-            Network::Sokol,
-            ContractVersion::V1
-        ).unwrap_or_else(|e| panic!("Failed to load contract: {:?}", e));
-        let sokol_url = env::var("SOKOL_RPC_ENDPOINT").expect("Missing env-var: `SOKOL_RPC_ENDPOINT`");
+        let contract = PoaContract::read(ContractType::Threshold, Network::Sokol, ContractVersion::V1)
+                .unwrap_or_else(|e| panic!("Failed to load contract: {:?}", e));
+        let sokol_url = env::var("SOKOL_RPC_ENDPOINT")
+                .expect("Missing env-var: `SOKOL_RPC_ENDPOINT`");
         let client = RpcClient::new(sokol_url);
         let res = client.get_voting_state(&contract, 2.into());
         println!("{:#?}", res);

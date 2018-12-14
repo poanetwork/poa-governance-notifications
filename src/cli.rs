@@ -1,7 +1,7 @@
 // Some of `Cli`'s methods are not currently being used.
 #![allow(dead_code)]
 
-use clap::{ArgMatches, App};
+use clap::{App, ArgMatches};
 
 pub fn parse_cli() -> Cli {
     let cli_args = App::new("poagov")
@@ -56,6 +56,10 @@ impl Cli {
 
     pub fn emission(&self) -> bool {
         self.0.is_present("emission")
+    }
+
+    pub fn no_contracts_specified(&self) -> bool {
+        !self.keys() && !self.threshold() && !self.proxy() && !self.emission()
     }
 
     pub fn v1(&self) -> bool {

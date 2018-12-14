@@ -50,6 +50,10 @@ impl From<BallotType> for ContractType {
 }
 
 impl ContractType {
+    fn is_emission(&self) -> bool {
+        *self == ContractType::Emission
+    }
+
     fn uppercase(&self) -> &str {
         match self {
             ContractType::Keys => "KEYS",
@@ -76,6 +80,10 @@ pub enum ContractVersion {
 }
 
 impl ContractVersion {
+    fn is_v1(&self) -> bool {
+        *self == ContractVersion::V1
+    }
+
     fn lowercase(&self) -> &str {
         match self {
             ContractVersion::V1 => "v1",
@@ -103,46 +111,44 @@ impl Debug for PoaContract {
 }
 
 impl PoaContract {
+    fn new(
+        kind: ContractType,
+        version: ContractVersion,
+        addr: Address,
+        abi: ethabi::Contract,
+    ) -> Self {
+        PoaContract { kind, version, addr, abi }
+    }
+
     pub fn read(
         contract_type: ContractType,
         network: Network,
         version: ContractVersion,
-    ) -> Result<Self>
-    {
-        if contract_type == ContractType::Emission && version == ContractVersion::V1 {
+    ) -> Result<Self> {
+        // Exit quickly if we know that the contract does not exist.
+        if contract_type.is_emission() && version.is_v1() {
             return Err(Error::EmissionFundsV1ContractDoesNotExist);
         }
 
-        let addr_env_var = format!(
+        let env_var = format!(
             "{}_CONTRACT_ADDRESS_{}_{:?}",
             contract_type.uppercase(),
             network.uppercase(),
-            version,
+            version
         );
-
-        let addr = if let Ok(s) = env::var(&addr_env_var) {
-            match Address::from_str(s.trim_left_matches("0x")) {
-                Ok(addr) => addr,
-                Err(_) => return Err(Error::InvalidContractAddr(s.into())),
-            }
-        } else {
-            return Err(Error::MissingEnvVar(addr_env_var));
-        };
+        let contract_addr_str = env::var(&env_var).map_err(|_| Error::MissingEnvVar(env_var))?;
+        let contract_addr = Address::from_str(contract_addr_str.trim_left_matches("0x"))
+            .map_err(|_| Error::InvalidContractAddr(contract_addr_str.to_string()))?;
 
         let abi_path = format!(
             "abis/{}/{}",
             version.lowercase(),
-            contract_type.abi_file_name(),
+            contract_type.abi_file_name()
         );
+        let abi_file = File::open(&abi_path).map_err(|_| Error::MissingAbiFile(abi_path.clone()))?;
+        let abi = Contract::load(&abi_file).map_err(|_| Error::InvalidAbi(abi_path))?;
 
-        let abi_file = File::open(&abi_path)
-            .map_err(|_| Error::MissingAbiFile(abi_path.clone()))?;
-
-        let abi = Contract::load(&abi_file)
-            .map_err(|_| Error::InvalidAbi(abi_path))?;
-
-        let contract = PoaContract { kind: contract_type, version, addr, abi };
-        Ok(contract)
+        Ok(PoaContract::new(contract_type, version, contract_addr, abi))
     }
 
     pub fn event(&self, event: &str) -> Event {
@@ -184,85 +190,78 @@ pub struct Config {
 
 impl Config {
     pub fn new(cli: &Cli) -> Result<Self> {
-        let network = if cli.core() == cli.sokol() {
-            return Err(Error::MustSpecifyOneCliArgument("`--core` or `--sokol`".into()));
-        } else if cli.core() {
+        if cli.core() == cli.sokol() {
+            return Err(Error::MustSpecifyOneCliArgument("--core, --sokol".to_string()));
+        }
+        if cli.v1() == cli.v2() {
+            return Err(Error::MustSpecifyOneCliArgument("--v1, --v2".to_string()));
+        }
+        if cli.no_contracts_specified() {
+            return Err(Error::MustSpecifyAtLeastOneCliArgument(
+                "--keys, --threshold, --proxy, --emission".to_string().to_string(),
+            ));
+        }
+        if cli.multiple_start_blocks_specified() {
+            return Err(Error::MustSpecifyOneCliArgument(
+                "--earliest, --latest, --start-block, --tail".to_string()
+            ));
+        }
+
+        let network = if cli.core() {
             Network::Core
         } else {
             Network::Sokol
+        };
+
+        let version = if cli.v1() {
+            ContractVersion::V1
+        } else {
+            ContractVersion::V2
         };
 
         let endpoint_env_var = format!("{}_RPC_ENDPOINT", network.uppercase());
         let endpoint = env::var(&endpoint_env_var)
             .map_err(|_| Error::MissingEnvVar(endpoint_env_var))?;
 
-        let version = if cli.v1() == cli.v2(){
-            return Err(Error::MustSpecifyOneCliArgument("`--v1` or `--v2`".into()));
-        } else if cli.v1(){
-            ContractVersion::V1
-        } else {
-            ContractVersion::V2
-        };
-
         let mut contracts = vec![];
         if cli.keys() {
-            let keys = PoaContract::read(
-                ContractType::Keys,
-                network,
-                version
-            )?;
-            contracts.push(keys);
+            let keys_contract = PoaContract::read(ContractType::Keys, network, version)?;
+            contracts.push(keys_contract);
         }
         if cli.threshold() {
-            let threshold = PoaContract::read(
-                ContractType::Threshold,
-                network,
-                version
-            )?;
-            contracts.push(threshold);
+            let threshold_contract = PoaContract::read(ContractType::Threshold, network, version)?;
+            contracts.push(threshold_contract);
         }
         if cli.proxy() {
-            let proxy = PoaContract::read(
-                ContractType::Proxy,
-                network,
-                version
-            )?;
-            contracts.push(proxy);
+            let proxy_contract = PoaContract::read(ContractType::Proxy, network, version)?;
+            contracts.push(proxy_contract);
         }
         if cli.emission() {
-            let emission_funds = PoaContract::read(
-                ContractType::Emission,
-                network,
-                version,
-            )?;
+            let emission_funds = PoaContract::read(ContractType::Emission, network, version)?;
             contracts.push(emission_funds);
         }
-        if contracts.is_empty() {
-            return Err(Error::MustSpecifyAtLeastOneCliArgument(
-                "`--keys`, `--threshold`, `--proxy`, `--emission`".into()
-            ));
-        }
 
-        let start_block = if cli.multiple_start_blocks_specified() {
-            return Err(Error::MustSpecifyOneCliArgument(
-                "`--earliest` or `--latest` or `--start-block` or `--tail`".into()
-            ));
-        } else if cli.earliest() {
+        let start_block = if cli.earliest() {
             StartBlock::Earliest
         } else if cli.latest() {
             StartBlock::Latest
-        } else if let Some(s) = cli.start_block() {
-            let block_number = s.parse().map_err(|_| Error::InvalidStartBlock(s.into()))?;
-            StartBlock::Number(block_number)
-        } else if let Some(s) = cli.tail() {
-            let tail = s.parse().map_err(|_| Error::InvalidTail(s.into()))?;
-            StartBlock::Tail(tail)
+        } else if let Some(start_block_str) = cli.start_block() {
+            match start_block_str.parse::<u64>() {
+                Ok(block_number) => StartBlock::Number(block_number),
+                _ => return Err(Error::InvalidStartBlock(start_block_str.to_string())),
+            }
+        } else if let Some(tail_str) = cli.tail() {
+            match tail_str.parse::<u64>() {
+                Ok(tail) => StartBlock::Tail(tail),
+                _ => return Err(Error::InvalidTail(tail_str.to_string())),
+            }
         } else {
+            // TODO: use `DEFAULT_START_BLOCK`?
             unreachable!();
         };
 
-        let block_time = if let Some(s) = cli.block_time() {
-            s.parse().map_err(|_| Error::InvalidBlockTime(s.into()))?
+        let block_time = if let Some(n_secs_str) = cli.block_time() {
+            n_secs_str.parse().map_err(|_| Error::InvalidBlockTime(n_secs_str.to_string()))?
         } else {
             DEFAULT_BLOCK_TIME_SECS
         };
@@ -272,13 +271,7 @@ impl Config {
         let email_recipients: Vec<String> = env::var("EMAIL_RECIPIENTS")
             .map_err(|_| Error::MissingEnvVar("EMAIL_RECIPIENTS".into()))?
             .split(',')
-            .filter_map(|s| {
-                if s.is_empty() {
-                    None
-                } else {
-                    Some(s.into())
-                }
-            })
+            .filter_map(|s| if s.is_empty() { None } else { Some(s.into()) })
             .collect();
 
         let smtp_host_domain = if email_notifications {
@@ -325,7 +318,9 @@ impl Config {
         };
 
         let notification_limit = if let Some(s) = cli.notification_limit() {
-            let limit = s.parse().map_err(|_| Error::InvalidNotificationLimit(s.into()))?;
+            let limit = s
+                .parse()
+                .map_err(|_| Error::InvalidNotificationLimit(s.into()))?;
             Some(limit)
         } else {
             None
@@ -334,7 +329,7 @@ impl Config {
         let log_emails = cli.log_emails();
         let log_to_file = cli.log_to_file();
 
-        let config = Config {
+        Ok(Config {
             network,
             endpoint,
             version,
@@ -351,8 +346,7 @@ impl Config {
             notification_limit,
             log_emails,
             log_to_file,
-        };
-        Ok(config)
+        })
     }
 }
 
@@ -360,14 +354,14 @@ impl Config {
 mod tests {
     use std::env;
 
-    use super::super::tests::setup;
-    use super::{ContractType, ContractVersion, PoaContract, Network};
+    use super::{ContractType, ContractVersion, Network, PoaContract};
+    use crate::tests::setup;
 
     const CONTRACT_TYPES: [ContractType; 4] = [
-            ContractType::Keys,
-            ContractType::Threshold,
-            ContractType::Proxy,
-            ContractType::Emission,
+        ContractType::Keys,
+        ContractType::Threshold,
+        ContractType::Proxy,
+        ContractType::Emission,
     ];
     const NETWORKS: [Network; 2] = [Network::Sokol, Network::Core];
     const VERSIONS: [ContractVersion; 2] = [ContractVersion::V1, ContractVersion::V2];
@@ -380,7 +374,7 @@ mod tests {
             assert!(env::var(&env_var).is_ok());
             for contract_type in CONTRACT_TYPES.iter() {
                 for version in VERSIONS.iter() {
-                    if *contract_type == ContractType::Emission && *version == ContractVersion::V1 {
+                    if contract_type.is_emission() && version.is_v1() {
                         continue;
                     }
                     let env_var = format!(
@@ -400,13 +394,12 @@ mod tests {
         setup();
         for contract_type in CONTRACT_TYPES.iter() {
             for version in VERSIONS.iter() {
+                if contract_type.is_emission() && version.is_v1() {
+                    continue;
+                }
                 for network in NETWORKS.iter() {
                     let res = PoaContract::read(*contract_type, *network, *version);
-                    if *contract_type == ContractType::Emission && *version == ContractVersion::V1 {
-                        assert!(res.is_err());
-                    } else {
-                        assert!(res.is_ok());
-                    }
+                    assert!(res.is_ok());
                 }
             }
         }

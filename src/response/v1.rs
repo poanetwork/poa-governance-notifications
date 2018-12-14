@@ -96,7 +96,7 @@ pub struct KeysVotingState {
     pub index: U256,
     pub min_threshold_of_voters: U256,
     pub creator: Address,
-    pub memo: String
+    pub memo: String,
 }
 
 impl From<Vec<ethabi::Token>> for KeysVotingState {

@@ -41,7 +41,8 @@ fn read_logs_dir() -> Vec<LogFile> {
             let path = res.ok()?.path();
             let file_name = path.file_name().unwrap().to_str().unwrap();
             LogFile::from_file_name(file_name).ok()
-        }).collect();
+        })
+        .collect();
     log_files.sort_unstable();
     log_files
 }
@@ -106,14 +107,12 @@ impl LogFile {
 
     fn create_file(&self) -> File {
         let path = self.path();
-        File::create(&path)
-            .unwrap_or_else(|_| panic!("failed to create log file: {}", path))
+        File::create(&path).unwrap_or_else(|_| panic!("failed to create log file: {}", path))
     }
 
     fn remove_file(&self) {
         let path = self.path();
-        remove_file(&path)
-            .unwrap_or_else(|_| panic!("failed to delete log file: {}", path))
+        remove_file(&path).unwrap_or_else(|_| panic!("failed to delete log file: {}", path))
     }
 }
 
@@ -185,17 +184,27 @@ impl Logger {
     }
 
     pub fn log_ctrlc_pressed(&mut self) {
-        warn!(&self.logger, "recieved ctrl-c signal, gracefully shutting down...");
+        warn!(
+            &self.logger,
+            "received ctrl-c signal, gracefully shutting down..."
+        );
         self.increment_log_count();
     }
 
     pub fn log_no_email_recipients_configured(&mut self) {
-        warn!(&self.logger, "email notifications are enabled, but there are no email recipients");
+        warn!(
+            &self.logger,
+            "email notifications are enabled, but there are no email recipients"
+        );
         self.increment_log_count();
     }
 
     pub fn log_notification_email_body(&mut self, notif: &Notification) {
-        info!(&self.logger, "governance notification\n{}", notif.email_text());
+        info!(
+            &self.logger,
+            "governance notification\n{}",
+            notif.email_text()
+        );
         self.increment_log_count();
     }
 

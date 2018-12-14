@@ -33,29 +33,35 @@ impl<'a> Notification<'a> {
         config: &'a Config,
         log: BallotCreatedLog,
         voting_state: VotingState,
-    ) -> Self
-    {
-        Notification::VotingState { config, log, voting_state }
+    ) -> Self {
+        Notification::VotingState {
+            config,
+            log,
+            voting_state,
+        }
     }
 
     pub fn from_ballot_info(
         config: &'a Config,
         log: BallotCreatedLog,
         ballot_info: BallotInfo,
-    ) -> Self
-    {
-        Notification::BallotInfo { config, log, ballot_info }
+    ) -> Self {
+        Notification::BallotInfo {
+            config,
+            log,
+            ballot_info,
+        }
     }
 
     pub fn email_text(&self) -> String {
         format!(
             "Network: {:?}\n\
-            RPC Endpoint: {}\n\
-            Block Number: {}\n\
-            Contract: {}\n\
-            Version: {:?}\n\
-            Ballot ID: {}\n\
-            {}\n",
+             RPC Endpoint: {}\n\
+             Block Number: {}\n\
+             Contract: {}\n\
+             Version: {:?}\n\
+             Ballot ID: {}\n\
+             {}\n",
             self.config().network,
             self.config().endpoint,
             self.log().block_number,
@@ -127,12 +133,20 @@ impl<'a> Notifier<'a> {
         } else {
             None
         };
-        Ok(Notifier { config, emailer, logger, notification_count: 0 })
+        Ok(Notifier {
+            config,
+            emailer,
+            logger,
+            notification_count: 0,
+        })
     }
 
     pub fn notify(&mut self, notif: &Notification) {
         if self.config.log_emails {
-            self.logger.lock().unwrap().log_notification_email_body(notif);
+            self.logger
+                .lock()
+                .unwrap()
+                .log_notification_email_body(notif);
         } else {
             self.logger.lock().unwrap().log_notification(notif);
         }
@@ -143,10 +157,13 @@ impl<'a> Notifier<'a> {
                     Err(e) => {
                         self.logger.lock().unwrap().log_failed_to_build_email(e);
                         continue;
-                    },
+                    }
                 };
                 if let Err(e) = self.send_email(email) {
-                    self.logger.lock().unwrap().log_failed_to_send_email(recipient, e);
+                    self.logger
+                        .lock()
+                        .unwrap()
+                        .log_failed_to_send_email(recipient, e);
                 } else {
                     self.logger.lock().unwrap().log_email_sent(recipient);
                 }
