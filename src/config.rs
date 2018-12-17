@@ -354,54 +354,69 @@ impl Config {
 mod tests {
     use std::env;
 
-    use super::{ContractType, ContractVersion, Network, PoaContract};
-    use crate::tests::setup;
-
-    const CONTRACT_TYPES: [ContractType; 4] = [
-        ContractType::Keys,
-        ContractType::Threshold,
-        ContractType::Proxy,
-        ContractType::Emission,
-    ];
-    const NETWORKS: [Network; 2] = [Network::Sokol, Network::Core];
-    const VERSIONS: [ContractVersion; 2] = [ContractVersion::V1, ContractVersion::V2];
+    use super::PoaContract;
+    use crate::tests::{
+        setup, CORE_NETWORK, SOKOL_NETWORK, V1_CONTRACT_TYPES, V1_VERSION, V2_CONTRACT_TYPES,
+        V2_VERSION,
+    };
 
     #[test]
-    fn test_env_file_integrity() {
+    fn test_load_contract_addresses() {
         setup();
-        for network in NETWORKS.iter() {
-            let env_var = format!("{}_RPC_ENDPOINT", network.uppercase());
-            assert!(env::var(&env_var).is_ok());
-            for contract_type in CONTRACT_TYPES.iter() {
-                for version in VERSIONS.iter() {
-                    if contract_type.is_emission() && version.is_v1() {
-                        continue;
-                    }
-                    let env_var = format!(
-                        "{}_CONTRACT_ADDRESS_{}_{:?}",
-                        contract_type.uppercase(),
-                        network.uppercase(),
-                        version,
-                    );
-                    assert!(env::var(&env_var).is_ok());
-                }
-            }
+
+        // Load v1 contract addresses.
+        for contract_type in V1_CONTRACT_TYPES.iter() {
+            let core_env_var = format!(
+                "{}_CONTRACT_ADDRESS_CORE_V1",
+                contract_type.uppercase(),
+            );
+            let res = env::var(core_env_var);
+            assert!(res.is_ok());
+
+            let sokol_env_var = format!(
+                "{}_CONTRACT_ADDRESS_SOKOL_V1",
+                contract_type.uppercase(),
+            );
+            let res = env::var(sokol_env_var);
+            assert!(res.is_ok());
+        }
+
+        // Load V2 contract addresses.
+        for contract_type in V2_CONTRACT_TYPES.iter() {
+            let core_env_var = format!(
+                "{}_CONTRACT_ADDRESS_CORE_V2",
+                contract_type.uppercase(),
+            );
+            let res = env::var(core_env_var);
+            assert!(res.is_ok());
+
+            let sokol_env_var = format!(
+                "{}_CONTRACT_ADDRESS_SOKOL_V2",
+                contract_type.uppercase(),
+            );
+            let res = env::var(sokol_env_var);
+            assert!(res.is_ok());
         }
     }
 
     #[test]
-    fn test_load_contract_abis() {
+    fn test_load_all_contract_abis() {
         setup();
-        for contract_type in CONTRACT_TYPES.iter() {
-            for version in VERSIONS.iter() {
-                if contract_type.is_emission() && version.is_v1() {
-                    continue;
-                }
-                for network in NETWORKS.iter() {
-                    let res = PoaContract::read(*contract_type, *network, *version);
-                    assert!(res.is_ok());
-                }
-            }
+
+        // Load all of the V1 contracts.
+        for contract_type in V1_CONTRACT_TYPES.iter() {
+            let res = PoaContract::read(*contract_type, SOKOL_NETWORK, V1_VERSION);
+            assert!(res.is_ok());
+            let res = PoaContract::read(*contract_type, CORE_NETWORK, V1_VERSION);
+            assert!(res.is_ok());
+        }
+
+        // Load all of the V2 contracts.
+        for contract_type in V2_CONTRACT_TYPES.iter() {
+            let res = PoaContract::read(*contract_type, SOKOL_NETWORK, V2_VERSION);
+            assert!(res.is_ok());
+            let res = PoaContract::read(*contract_type, CORE_NETWORK, V2_VERSION);
+            assert!(res.is_ok());
         }
     }
 }

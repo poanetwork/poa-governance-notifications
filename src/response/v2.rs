@@ -4,6 +4,22 @@ use web3::types::{Address, U256};
 
 use crate::response::common::{u256_to_datetime, BallotType, KeyType};
 
+/// Converts the `amount` field found in the `VotingToManageEmissionFunds` contract from Wei to
+/// POA.
+fn convert_wei_to_poa(amount_in_wei: U256) -> f64 {
+    let whole_poa = amount_in_wei / U256::exp10(18);
+    let remaining_poa = {
+        let whole_with_padding = whole_poa * U256::exp10(18);
+        (amount_in_wei - whole_with_padding).low_u64() as f64
+    };
+    let fraction_of_a_poa = {
+        let eighteen_zeros: String = (0..18).map(|_| '0').collect();
+        let max_fract: f64 = format!("1{}", eighteen_zeros).parse().unwrap();
+        remaining_poa / max_fract
+    };
+    whole_poa.low_u64() as f64 + fraction_of_a_poa
+}
+
 #[derive(Clone, Debug)]
 pub enum BallotInfo {
     Keys(KeysBallotInfo),
@@ -232,7 +248,7 @@ pub struct ProxyBallotInfo {
     pub creator: Address,
     pub memo: String,
     pub can_be_finalized_now: bool,
-    // pub already_voted: bool,
+    pub already_voted: bool,
 }
 
 impl From<Vec<ethabi::Token>> for ProxyBallotInfo {
@@ -246,14 +262,14 @@ impl From<Vec<ethabi::Token>> for ProxyBallotInfo {
             u256_to_datetime(uint)
         };
         let total_voters = tokens[2].clone().to_uint().unwrap();
-        let progress = tokens[3].clone().to_uint().unwrap();
+        let progress = tokens[3].clone().to_int().unwrap();
         let is_finalized = tokens[4].clone().to_bool().unwrap();
         let proposed_value = tokens[5].clone().to_address().unwrap();
         let contract_type = tokens[6].clone().to_uint().unwrap();
         let creator = tokens[7].clone().to_address().unwrap();
         let memo = tokens[8].clone().to_string().unwrap();
         let can_be_finalized_now = tokens[9].clone().to_bool().unwrap();
-        // let already_voted = tokens[10].clone().to_bool().unwrap();
+        let already_voted = tokens[10].clone().to_bool().unwrap();
         ProxyBallotInfo {
             start_time,
             end_time,
@@ -265,7 +281,7 @@ impl From<Vec<ethabi::Token>> for ProxyBallotInfo {
             creator,
             memo,
             can_be_finalized_now,
-            // already_voted,
+            already_voted,
         }
     }
 }
@@ -378,20 +394,4 @@ impl EmissionBallotInfo {
             self.memo,
         )
     }
-}
-
-/// Converts the `amount` field found in the `VotingToManageEmissionFunds` contract from Wei to
-/// POA.
-fn convert_wei_to_poa(amount_in_wei: U256) -> f64 {
-    let whole_poa = amount_in_wei / U256::exp10(18);
-    let remaining_poa = {
-        let whole_with_padding = whole_poa * U256::exp10(18);
-        (amount_in_wei - whole_with_padding).low_u64() as f64
-    };
-    let fraction_of_a_poa = {
-        let eighteen_zeros: String = (0..18).map(|_| '0').collect();
-        let max_fract: f64 = format!("1{}", eighteen_zeros).parse().unwrap();
-        remaining_poa / max_fract
-    };
-    whole_poa.low_u64() as f64 + fraction_of_a_poa
 }

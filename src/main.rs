@@ -131,6 +131,26 @@ fn main() -> Result<()> {
 #[cfg(test)]
 pub mod tests {
     use super::load_env_file;
+    use crate::config::{ContractType, ContractVersion, Network};
+
+    pub const CORE_NETWORK: Network = Network::Core;
+    pub const SOKOL_NETWORK: Network = Network::Sokol;
+
+    pub const V1_VERSION: ContractVersion = ContractVersion::V1;
+    pub const V2_VERSION: ContractVersion = ContractVersion::V2;
+
+    pub const V1_CONTRACT_TYPES: [ContractType; 3] = [
+        ContractType::Keys,
+        ContractType::Threshold,
+        ContractType::Proxy,
+    ];
+
+    pub const V2_CONTRACT_TYPES: [ContractType; 4] = [
+        ContractType::Keys,
+        ContractType::Threshold,
+        ContractType::Proxy,
+        ContractType::Emission,
+    ];
 
     /// Loads the .env file once at the start of the tests.
     pub fn setup() {
