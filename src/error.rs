@@ -23,9 +23,11 @@ pub enum Error {
     MissingEnvVar(String),
     MustSpecifyAtLeastOneCliArgument(String),
     MustSpecifyOneCliArgument(String),
+    MustSpecifyZeroOrOneCliArguments(String),
     RequestFailed(reqwest::Error),
     StartBlockExceedsLastBlockMined {
         start_block: u64,
         last_mined_block: u64,
     },
+    V1ContractsWereNotDeployedToXDaiChain,
 }
