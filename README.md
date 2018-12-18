@@ -21,21 +21,26 @@ OSX. The `poagov` binary can be built from source for both OSX and Linux using t
 usage, if you do not have `libssl` installed, go to the "Requires libssl"
 section in this README to find out how to download it.  
 
-    $ mkdir poa-governance-notifications
-    $ cd poa-governance-notifications
-
     # Download `poagov` for Debian/Ubuntu:
     $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v2.0.0/poagov-2.0.0-linux-x86_64.tar.gz
     $ tar -xvzf poagov-2.0.0-linux-x86_64.tar.gz
     $ rm poagov-2.0.0-linux-x86_64.tar.gz
+    $ cd poa-governance-notifications
+    $ mv sample.env .env
+    # Optionally rename binary from `poagov-2.0.0-linux-x86_64` to `poagov`:
     $ mv poagov-2.0.0-linux-x86_64 poagov
 
     # Or download `poagov` for OSX:
     $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v2.0.0/poagov-2.0.0-osx-x86_64.tar.gz
     $ tar -xvzf poagov-2.0.0-osx-x86_64.tar.gz
     $ rm poagov-2.0.0-osx-x86_64.tar.gz
+    $ cd poa-governance-notifications
+    $ mv sample.env .env
+    # Optionally rename binary from `poagov-2.0.0-osx-x86_64` to `poagov`:
     $ mv poagov-2.0.0-osx-x86_64 poagov
 
+    # If you did not rename your binary in the previous step, replace "poagov"
+    # in the following commands with your Linux or OSX binary's name:
     $ chmod +x poagov
     $ ./poagov --help
 
