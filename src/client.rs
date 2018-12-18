@@ -225,6 +225,7 @@ mod tests {
     use crate::response::v2::BallotInfo;
     use crate::tests::{
         setup, SOKOL_NETWORK, V1_CONTRACT_TYPES, V1_VERSION, V2_CONTRACT_TYPES, V2_VERSION,
+        XDAI_NETWORK,
     };
 
     #[test]
@@ -257,6 +258,22 @@ mod tests {
         // As of writing this test, the last mined block number on the Sokol POA chain was 6107511.
         let last_mined_block_number = res.unwrap();
         assert!(last_mined_block_number >= 6107511);
+    }
+
+    #[test]
+    fn test_get_last_mined_block_xdai() {
+        setup();
+
+        let rpc_url = env::var("XDAI_RPC_ENDPOINT")
+            .expect("Missing env-var: `XDAI_RPC_ENDPOINT`");
+
+        let client = RpcClient::new(rpc_url);
+        let res = client.get_last_mined_block_number();
+        assert!(res.is_ok());
+
+        // As of writing this test, the last mined block number on the xDai chain was 1199366.
+        let last_mined_block_number = res.unwrap();
+        assert!(last_mined_block_number >= 1199366);
     }
 
     #[test]
@@ -387,6 +404,26 @@ mod tests {
 
         for contract_type in V2_CONTRACT_TYPES.iter() {
             let contract = match PoaContract::read(*contract_type, SOKOL_NETWORK, V2_VERSION) {
+                Ok(contract) => contract,
+                Err(e) => panic!("Failed to load contract: {:?}", e),
+            };
+            let res = client.get_ballot_info(&contract, ballot_id);
+            assert!(res.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_get_ballot_info_for_v2_contracts_on_xdai_network() {
+        setup();
+
+        let rpc_url = env::var("XDAI_RPC_ENDPOINT")
+            .expect("Missing env-var: `XDAI_RPC_ENDPOINT`");
+
+        let client = RpcClient::new(rpc_url);
+        let ballot_id = U256::from(0);
+
+        for contract_type in V2_CONTRACT_TYPES.iter() {
+            let contract = match PoaContract::read(*contract_type, XDAI_NETWORK, V2_VERSION) {
                 Ok(contract) => contract,
                 Err(e) => panic!("Failed to load contract: {:?}", e),
             };

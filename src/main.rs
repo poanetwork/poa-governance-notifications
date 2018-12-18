@@ -135,6 +135,7 @@ pub mod tests {
 
     pub const CORE_NETWORK: Network = Network::Core;
     pub const SOKOL_NETWORK: Network = Network::Sokol;
+    pub const XDAI_NETWORK: Network = Network::XDai;
 
     pub const V1_VERSION: ContractVersion = ContractVersion::V1;
     pub const V2_VERSION: ContractVersion = ContractVersion::V2;
