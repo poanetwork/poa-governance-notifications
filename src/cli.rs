@@ -5,7 +5,7 @@ use clap::{App, ArgMatches};
 
 pub fn parse_cli() -> Cli {
     let cli_args = App::new("poagov")
-        .version("1.0.0")
+        .version("2.0.0")
         .about("Monitors a POA Network blockchain for governance events.")
         .args_from_usage(
             "[core] --core 'Monitors POA Network's Core Network for governance ballots'

@@ -21,24 +21,23 @@ OSX. The `poagov` binary can be built from source for both OSX and Linux using t
 usage, if you do not have `libssl` installed, go to the "Requires libssl"
 section in this README to find out how to download it.  
 
-On Debian/Ubuntu:
+    $ mkdir poa-governance-notifications
+    $ cd poa-governance-notifications
 
-    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v1.0.0/poagov-1.0.0-linux-x86_64.tar.gz
-    $ tar -xvzf poagov-1.0.0-linux-x86_64.tar.gz
-    $ rm poagov-1.0.0-linux-x86_64.tar.gz
-    $ cd poagov
+    # Download `poagov` for Debian/Ubuntu:
+    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v2.0.0/poagov-2.0.0-linux-x86_64.tar.gz
+    $ tar -xvzf poagov-2.0.0-linux-x86_64.tar.gz
+    $ rm poagov-2.0.0-linux-x86_64.tar.gz
+    $ mv poagov-2.0.0-linux-x86_64 poagov
+
+    # Or download `poagov` for OSX:
+    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v2.0.0/poagov-2.0.0-osx-x86_64.tar.gz
+    $ tar -xvzf poagov-2.0.0-osx-x86_64.tar.gz
+    $ rm poagov-2.0.0-osx-x86_64.tar.gz
+    $ mv poagov-2.0.0-osx-x86_64 poagov
+
     $ chmod +x poagov
     $ ./poagov --help
-
-On OSX:
-
-    $ curl -OL https://github.com/poanetwork/poa-governance-notifications/releases/download/v1.0.0/poagov-1.0.0-osx-x86_64.tar.gz
-    $ tar -xvzf poagov-1.0.0-osx-x86_64.tar.gz
-    $ rm poagov-1.0.0-osx-x86_64.tar.gz
-    $ cd poagov
-    $ chmod +x poagov
-    $ ./poagov --help
-
 
 ### Building `poagov` from Source
 
@@ -112,7 +111,7 @@ running:
     # Or, if you built `poagov` from source run:
     $ target/release/poagov --help
 
-    poagov 1.0.0
+    poagov 2.0.0
     Monitors a POA Network blockchain for governance events.
 
     USAGE:
