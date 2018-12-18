@@ -15,6 +15,7 @@ const DEFAULT_BLOCK_TIME_SECS: u64 = 30;
 pub enum Network {
     Core,
     Sokol,
+    XDai,
 }
 
 impl Network {
@@ -22,6 +23,7 @@ impl Network {
         match self {
             Network::Core => "CORE",
             Network::Sokol => "SOKOL",
+            Network::XDai=> "XDAI",
         }
     }
 }
@@ -190,18 +192,26 @@ pub struct Config {
 
 impl Config {
     pub fn new(cli: &Cli) -> Result<Self> {
-        if cli.core() == cli.sokol() {
+        if !cli.one_network_specified() {
             return Err(Error::MustSpecifyOneCliArgument("--core, --sokol".to_string()));
         }
-        if cli.v1() == cli.v2() {
-            return Err(Error::MustSpecifyOneCliArgument("--v1, --v2".to_string()));
+        if cli.multiple_versions_specified() {
+            return Err(Error::MustSpecifyZeroOrOneCliArguments("--v1, --v2".to_string()));
         }
         if cli.no_contracts_specified() {
             return Err(Error::MustSpecifyAtLeastOneCliArgument(
                 "--keys, --threshold, --proxy, --emission".to_string().to_string(),
             ));
         }
-        if cli.multiple_start_blocks_specified() {
+        if cli.v1() {
+            if cli.xdai() {
+                return Err(Error::V1ContractsWereNotDeployedToXDaiChain);
+            }
+            if cli.emission() {
+                return Err(Error::EmissionFundsV1ContractDoesNotExist);
+            }
+        }
+        if !cli.one_start_block_was_specified() {
             return Err(Error::MustSpecifyOneCliArgument(
                 "--earliest, --latest, --start-block, --tail".to_string()
             ));
@@ -209,10 +219,13 @@ impl Config {
 
         let network = if cli.core() {
             Network::Core
-        } else {
+        } else if cli.sokol() {
             Network::Sokol
+        } else {
+            Network::XDai
         };
 
+        // We default to `V2` if no contract version CLI argument was supplied.
         let version = if cli.v1() {
             ContractVersion::V1
         } else {
@@ -268,23 +281,26 @@ impl Config {
 
         let email_notifications = cli.email();
 
+        // TODO: should the recipient email addresses be validated here? For now, we just allow
+        // email sending to fail, which will then get logged to the user.
         let email_recipients: Vec<String> = env::var("EMAIL_RECIPIENTS")
-            .map_err(|_| Error::MissingEnvVar("EMAIL_RECIPIENTS".into()))?
+            .map_err(|_| Error::MissingEnvVar("EMAIL_RECIPIENTS".to_string()))?
             .split(',')
-            .filter_map(|s| if s.is_empty() { None } else { Some(s.into()) })
+            .map(|recipient_email_address| recipient_email_address.to_string())
             .collect();
 
         let smtp_host_domain = if email_notifications {
-            let host = env::var("SMTP_HOST_DOMAIN")
-                .map_err(|_| Error::MissingEnvVar("SMTP_HOST_DOMAIN".into()))?;
-            Some(host)
+            match env::var("SMTP_HOST_DOMAIN") {
+                Ok(host) => Some(host),
+                _ => return Err(Error::MissingEnvVar("SMTP_HOST_DOMAIN".to_string())),
+            }
         } else {
             None
         };
 
         let smtp_port = if email_notifications {
             if let Ok(s) = env::var("SMTP_PORT") {
-                let port = s.parse().map_err(|_| Error::InvalidSmtpPort(s.into()))?;
+                let port = s.parse().map_err(|_| Error::InvalidSmtpPort(s.to_string()))?;
                 Some(port)
             } else {
                 return Err(Error::MissingEnvVar("SMTP_PORT".into()));
@@ -294,25 +310,28 @@ impl Config {
         };
 
         let smtp_username = if email_notifications {
-            let username = env::var("SMTP_USERNAME")
-                .map_err(|_| Error::MissingEnvVar("SMTP_USERNAME".into()))?;
-            Some(username)
+            match env::var("SMTP_USERNAME") {
+                Ok(username) => Some(username),
+                _ => return Err(Error::MissingEnvVar("SMTP_USERNAME".into())),
+            }
         } else {
             None
         };
 
         let smtp_password = if email_notifications {
-            let password = env::var("SMTP_PASSWORD")
-                .map_err(|_| Error::MissingEnvVar("SMTP_PASSWORD".into()))?;
-            Some(password)
+            match env::var("SMTP_PASSWORD") {
+                Ok(password) => Some(password),
+                _ => return Err(Error::MissingEnvVar("SMTP_PASSWORD".to_string())),
+            }
         } else {
             None
         };
 
         let outgoing_email_addr = if email_notifications {
-            let email_addr = env::var("OUTGOING_EMAIL_ADDRESS")
-                .map_err(|_| Error::MissingEnvVar("OUTGOING_EMAIL_ADDRESS".into()))?;
-            Some(email_addr)
+            match env::var("OUTGOING_EMAIL_ADDRESS") {
+                Ok(outgoing_email_addr) => Some(outgoing_email_addr),
+                _ => return Err(Error::MissingEnvVar("OUTGOING_EMAIL_ADDRESS".to_string())),
+            }
         } else {
             None
         };
