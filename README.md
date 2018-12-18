@@ -51,7 +51,7 @@ To build the `poagov` CLI tool from source, clone this repo and run:
     $ cargo build --release
 
 `poagov` can be built with Rust 1.31.0-stable or later and requires `libssl`;
-see the "Requires `libssl`" section in this README for more information.
+see the "Running and Building `poagov` Requires `libssl`" section in this README for more information.
 
 ##### Testing `poagov`
 
@@ -59,7 +59,7 @@ You can run `poagov`'s tests to ensure that everything is working properly:
 
     $ cargo test --release
 
-### Running `poagov` Requires `libssl`
+### Running and Building `poagov` Requires `libssl`
 
 SMTP over TLS requires that you have a native TLS library installed on your
 machine, the preferred library for Linux and OSX is OpenSSL >= 1.0.1,
@@ -73,6 +73,11 @@ If running `cargo build --release` panics with an error like:
     ..."
 
 you probably do not have `libssl` installed.
+
+You can use `dpkg` to check to see if you have `libssl` installed, and if so
+which version(s) are installed:
+
+    $ dpkg -l | grep libssl
 
 To install `libssl` on Debian/Ubuntu run the following:
 
